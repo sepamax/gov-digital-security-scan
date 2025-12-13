@@ -20,28 +20,18 @@
       margin: 0;
     }
 
-    h1 {
-      font-size: 2.3rem;
-      margin-bottom: 8px;
-    }
-
-    p {
-      color: #b6bcc8;
-      max-width: 900px;
-      line-height: 1.6;
-    }
+    h1 { font-size: 2.3rem; margin-bottom: 8px; }
+    p { color: #b6bcc8; max-width: 940px; line-height: 1.6; }
 
     .scan-box {
       margin-top: 32px;
       background: #141821;
       padding: 26px;
       border-radius: 10px;
-      max-width: 940px;
+      max-width: 980px;
     }
 
-    label {
-      font-weight: 600;
-    }
+    label { font-weight: 600; }
 
     input {
       padding: 12px;
@@ -65,17 +55,9 @@
       margin-top: 10px;
     }
 
-    button.secondary {
-      background: #1f2937;
-    }
-
-    button.hidden {
-      display: none;
-    }
-
-    button:hover {
-      opacity: 0.9;
-    }
+    button.secondary { background: #1f2937; }
+    button.hidden { display: none; }
+    button:hover { opacity: 0.9; }
 
     pre {
       margin-top: 26px;
@@ -88,15 +70,13 @@
       line-height: 1.5;
     }
 
-    .actions {
-      margin-top: 18px;
-    }
+    .actions { margin-top: 18px; }
 
     .footer {
       margin-top: 60px;
       font-size: 0.85rem;
       color: #8b92a8;
-      max-width: 940px;
+      max-width: 980px;
     }
   </style>
 </head>
@@ -106,13 +86,8 @@
   <h1>AI-Assisted Website Security Surface Scan</h1>
 
   <p>
-    This tool uses AI-assisted logic to interpret publicly observable website security
-    signals, limited to HTTP response headers. The assessment is advisory and non-intrusive.
-  </p>
-
-  <p>
-    No authentication, exploitation, traffic manipulation, or bypass techniques are used.
-    Results are intended for risk awareness, uplift planning, and documentation support.
+    Non-intrusive advisory assessment using AI-assisted interpretation of
+    publicly observable HTTP response headers only.
   </p>
 
   <div class="scan-box">
@@ -136,8 +111,8 @@
 
   <div class="footer">
     <strong>Methodology & Disclaimer</strong><br />
-    This assessment is generated using AI-assisted interpretation of publicly observable
-    HTTP response headers only. It is not a penetration test, certification, or compliance audit.
+    Advisory assessment based solely on publicly observable HTTP response headers.
+    Not a penetration test, certification, or compliance audit.
   </div>
 
   <script>
@@ -151,17 +126,14 @@
       const pdfBtn = document.getElementById("pdfBtn");
 
       let domain = domainInput.value.trim();
-
       if (!domain) {
         output.textContent = "❌ Please enter a valid domain.";
         return;
       }
 
-      if (!domain.startsWith("http")) {
-        domain = "https://" + domain;
-      }
-
+      if (!domain.startsWith("http")) domain = "https://" + domain;
       lastDomain = domain.replace(/^https?:\/\//, "");
+
       viewBtn.classList.add("hidden");
       pdfBtn.classList.add("hidden");
 
@@ -186,12 +158,10 @@
         ];
 
         let missing = 0;
-        let report =
-          "AI-Assisted Website Security Surface Scan\n\n";
+        let report = "AI-Assisted Header Assessment\n\n";
 
         checks.forEach(([header, label]) => {
-          const value = headers.get(header);
-          if (value) {
+          if (headers.get(header)) {
             report += `✔ ${label}: PRESENT\n`;
           } else {
             report += `⚠ ${label}: NOT DETECTED\n`;
@@ -199,17 +169,16 @@
           }
         });
 
-        let risk =
+        const risk =
           missing >= 4 ? "HIGH" :
-          missing >= 2 ? "MODERATE" :
-          "LOW";
+          missing >= 2 ? "MODERATE" : "LOW";
 
         report += `\nOverall surface risk level: ${risk}\n\n`;
         report +=
-          "Interpretation notes:\n" +
-          "- Findings reflect surface-level exposure only\n" +
-          "- Missing headers indicate increased risk, not confirmed vulnerabilities\n" +
-          "- No intrusive testing was performed\n";
+          "Notes:\n" +
+          "- Public header inspection only\n" +
+          "- Missing headers indicate exposure, not confirmed vulnerabilities\n" +
+          "- No intrusive testing performed\n";
 
         lastReportText = report;
         output.textContent = report;
@@ -217,48 +186,40 @@
         viewBtn.classList.remove("hidden");
         pdfBtn.classList.remove("hidden");
 
-      } catch (err) {
+      } catch {
         output.textContent =
-          "❌ Unable to retrieve public headers.\n\n" +
-          "This may be due to request blocking or network configuration.\n" +
-          "It does not imply a security failure.";
+          "❌ Unable to retrieve headers.\n\n" +
+          "This does not imply a security failure.";
       }
     }
 
     function openReportTab() {
-      const reportWindow = window.open("", "_blank");
-      reportWindow.document.write(`
-        <html>
-          <head>
-            <title>AI Security Surface Scan Report</title>
-            <style>
-              body {
-                font-family: system-ui, sans-serif;
-                padding: 40px;
-                line-height: 1.6;
-              }
-              h1 { margin-bottom: 10px; }
-              pre {
-                background: #f4f4f4;
-                padding: 20px;
-                white-space: pre-wrap;
-              }
-            </style>
-          </head>
-          <body>
-            <h1>AI-Assisted Website Security Surface Scan</h1>
-            <p><strong>Domain:</strong> ${lastDomain}</p>
-            <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
-            <pre>${lastReportText}</pre>
-            <p>
-              <strong>Disclaimer:</strong><br />
-              Advisory assessment based solely on publicly observable HTTP response headers.
-              Not a penetration test or compliance certification.
-            </p>
-          </body>
-        </html>
-      `);
-      reportWindow.document.close();
+      const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AI Security Surface Scan Report</title>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 40px; line-height: 1.6; }
+    h1 { margin-bottom: 10px; }
+    pre { background: #f4f4f4; padding: 20px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>AI-Assisted Website Security Surface Scan</h1>
+  <p><strong>Domain:</strong> ${lastDomain}</p>
+  <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+  <pre>${lastReportText}</pre>
+  <p><strong>Disclaimer:</strong><br>
+  Advisory assessment based solely on publicly observable HTTP response headers.
+  Not a penetration test or compliance audit.</p>
+</body>
+</html>`;
+
+      const blob = new Blob([html], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
     }
 
     function downloadPDF() {
@@ -266,27 +227,11 @@
       const doc = new jsPDF();
       const timestamp = new Date().toLocaleString();
 
-      doc.setFontSize(14);
       doc.text("Urban Sentinel", 14, 20);
-      doc.setFontSize(12);
       doc.text("AI-Assisted Website Security Surface Scan", 14, 30);
-
-      doc.setFontSize(10);
       doc.text(`Domain: ${lastDomain}`, 14, 40);
       doc.text(`Generated: ${timestamp}`, 14, 46);
-
-      doc.setFontSize(10);
       doc.text(lastReportText, 14, 60, { maxWidth: 180 });
-
-      doc.addPage();
-      doc.text(
-        "Disclaimer:\n\n" +
-        "This report is advisory only and generated using AI-assisted\n" +
-        "interpretation of publicly observable HTTP response headers.\n" +
-        "It is not a penetration test, certification, or compliance audit.",
-        14,
-        20
-      );
 
       doc.save(`urban-sentinel-ai-surface-scan-${lastDomain}.pdf`);
     }
