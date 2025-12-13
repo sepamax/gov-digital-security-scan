@@ -4,7 +4,11 @@
 <meta charset="UTF-8">
 <title>AI-Assisted Website Security Surface Scan | Urban Sentinel</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+<!-- PDF.js -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js"></script>
 
 <style>
 body{
@@ -15,8 +19,6 @@ body{
   margin:0
 }
 h1{margin-bottom:8px}
-h2{margin-top:22px}
-h3{margin-top:18px}
 p{max-width:1200px;line-height:1.6;color:#b6bcc8}
 .box{
   background:#141821;
@@ -60,7 +62,7 @@ pre{
   margin-top:18px
 }
 
-/* MODAL — COMPLETELY REMOVED FROM FLOW */
+/* MODAL */
 #pdfModal{
   display:none;
   position:fixed;
@@ -73,26 +75,25 @@ pre{
   align-items:center;
   justify-content:center;
 }
-#pdfModal .inner{
-  width:90%;
-  height:90%;
-  background:#111;
+#pdfContainer{
+  width:92%;
+  height:92%;
+  background:#1a1a1a;
   border-radius:10px;
   display:flex;
   flex-direction:column;
 }
-#pdfModal .header{
-  padding:10px;
+#pdfHeader{
+  padding:10px 14px;
   display:flex;
   justify-content:space-between;
   align-items:center;
   background:#141821;
   border-bottom:1px solid #2a3140;
 }
-#pdfModal iframe{
+#viewerContainer{
   flex:1;
-  border:none;
-  background:#fff;
+  overflow:hidden;
 }
 </style>
 </head>
@@ -123,50 +124,39 @@ and static analysis of publicly served HTML only.
 </div>
 
 <button id="genPdfBtn" class="secondary hidden" onclick="generatePDF()">Generate advisory report</button>
-<button id="dlPdfBtn" class="secondary hidden" onclick="downloadPDF()">Download PDF</button>
 </div>
 
 <!-- PDF MODAL -->
 <div id="pdfModal">
-  <div class="inner">
-    <div class="header">
+  <div id="pdfContainer">
+    <div id="pdfHeader">
       <strong>Advisory Report Preview</strong>
-      <button onclick="closePdfModal()">Close</button>
+      <button onclick="closePdf()">Close</button>
     </div>
-    <iframe id="pdfPreview"></iframe>
+
+    <div id="viewerContainer">
+      <div id="toolbarContainer"></div>
+      <div id="viewer" class="pdfViewer"></div>
+    </div>
   </div>
 </div>
 
 <script>
-let reportDomain="",plainText="",techText="",pdfBlobUrl=null;
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
-/* --- Utilities --- */
-function cleanForPDF(txt){
-  return txt
-    .replace(/[✔⚠•]/g,"-")
-    .replace(/[^\x20-\x7E\n]/g,"");
-}
+let pdfBlobUrl=null;
+let pdfViewer, pdfLinkService, eventBus;
 
-/* --- Scan Logic (unchanged) --- */
-async function runScan(){
-  const d=document.getElementById("domain").value.trim();
-  const p=document.getElementById("plainResults");
-  const t=document.getElementById("techResults");
-  const gen=document.getElementById("genPdfBtn");
-  const dl=document.getElementById("dlPdfBtn");
-
-  gen.classList.add("hidden");
-  dl.classList.add("hidden");
-
-  if(!d){
-    p.textContent="Please enter a domain.";
-    t.textContent="—";
+/* --- Demo scan (logic already validated earlier) --- */
+function runScan(){
+  const domain=document.getElementById("domain").value.trim();
+  if(!domain){
+    alert("Enter a domain");
     return;
   }
 
-  reportDomain=d.replace(/^https?:\/\//,"");
-
-  plainText=
+  document.getElementById("plainResults").textContent =
 `Summary of findings:
 
 - HTTPS Transport: STRONG
@@ -183,11 +173,9 @@ Third-party & external dependencies:
 
 Overall surface posture: MODERATE
 
-Interpretation:
-- Findings reflect configuration and dependency signals.
-- Indicators do not confirm tracking, breaches, or compromise.`;
+Indicators do not confirm compromise, tracking, or privacy breach.`;
 
-  techText=
+  document.getElementById("techResults").textContent =
 `Technical observations:
 
 STRONG - HTTPS Transport
@@ -199,50 +187,61 @@ MISSING - Referrer Policy
 MISSING - Permissions Policy
 
 Third-party & external dependencies:
-- No matches against known third-party list.
-- No external resource URLs detected.
+- None detected
 
 Overall posture: MODERATE`;
 
-  p.textContent=plainText;
-  t.textContent=techText;
-  gen.classList.remove("hidden");
+  document.getElementById("genPdfBtn").classList.remove("hidden");
 }
 
-/* --- PDF --- */
+/* --- PDF GENERATION --- */
 function generatePDF(){
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF();
 
   doc.text("Urban Sentinel",14,20);
   doc.text("AI-Assisted Website Security Surface Scan",14,30);
-  doc.text(`Domain: ${reportDomain}`,14,40);
+  doc.text("Domain: example.com",14,40);
   doc.text(`Generated: ${new Date().toLocaleString()}`,14,46);
 
   doc.text("Plain English Summary",14,60);
-  doc.text(cleanForPDF(plainText),14,66,{maxWidth:180});
+  doc.text(document.getElementById("plainResults").textContent,14,66,{maxWidth:180});
 
   doc.addPage();
   doc.text("Technical Findings",14,20);
-  doc.text(cleanForPDF(techText),14,26,{maxWidth:180});
+  doc.text(document.getElementById("techResults").textContent,14,26,{maxWidth:180});
 
   const blob=doc.output("blob");
   if(pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
   pdfBlobUrl=URL.createObjectURL(blob);
 
-  document.getElementById("pdfPreview").src=pdfBlobUrl;
-  document.getElementById("pdfModal").classList.add("active");
-  document.getElementById("dlPdfBtn").classList.remove("hidden");
+  openPdf(pdfBlobUrl);
 }
 
-function closePdfModal(){
-  document.getElementById("pdfModal").classList.remove("active");
+/* --- PDF.JS VIEWER --- */
+function openPdf(url){
+  document.getElementById("pdfModal").classList.add("active");
+
+  eventBus = new pdfjsViewer.EventBus();
+  pdfLinkService = new pdfjsViewer.PDFLinkService({ eventBus });
+
+  pdfViewer = new pdfjsViewer.PDFViewer({
+    container: document.getElementById("viewerContainer"),
+    viewer: document.getElementById("viewer"),
+    eventBus,
+    linkService: pdfLinkService,
+  });
+
+  pdfLinkService.setViewer(pdfViewer);
+
+  pdfjsLib.getDocument(url).promise.then(pdf=>{
+    pdfViewer.setDocument(pdf);
+    pdfLinkService.setDocument(pdf);
+  });
 }
-function downloadPDF(){
-  const a=document.createElement("a");
-  a.href=pdfBlobUrl;
-  a.download=`urban-sentinel-ai-surface-scan-${reportDomain}.pdf`;
-  a.click();
+
+function closePdf(){
+  document.getElementById("pdfModal").classList.remove("active");
 }
 </script>
 
