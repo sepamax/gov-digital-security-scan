@@ -14,17 +14,6 @@ body{
   padding:40px;
   margin:0
 }
-h1{margin-bottom:8px}
-p{max-width:1200px;line-height:1.6;color:#b6bcc8}
-.warning{
-  background:#1f2937;
-  border-left:4px solid #f59e0b;
-  padding:12px;
-  margin-top:14px;
-  border-radius:6px;
-  font-size:14px;
-  color:#facc15
-}
 .box{
   background:#141821;
   padding:24px;
@@ -52,19 +41,35 @@ button{
 button.secondary{background:#1f2937;margin-top:10px}
 button.hidden{display:none}
 pre{
-  margin-top:12px;
   background:#0b0e14;
   padding:18px;
   border-radius:8px;
   white-space:pre-wrap;
-  line-height:1.5;
-  color:#cbd5f5
+  line-height:1.6;
+  color:#cbd5f5;
+  min-height:120px
 }
 .grid{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:18px;
   margin-top:18px
+}
+
+/* Animated dots */
+.dots::after{
+  content:"";
+  animation:dots 1.4s infinite;
+  margin-left:6px;
+  color:#60a5fa;
+  text-shadow:0 0 6px rgba(96,165,250,.8);
+}
+@keyframes dots{
+  0%{content:""}
+  25%{content:"."}
+  50%{content:".."}
+  75%{content:"..."}
+  100%{content:""}
 }
 
 /* MODAL */
@@ -107,16 +112,6 @@ pre{
 <body>
 
 <h1>AI-Assisted Website Security Surface Scan</h1>
-<p>
-Non-intrusive advisory assessment using publicly observable HTTP response headers
-and static analysis of publicly served HTML only.
-</p>
-
-<div class="warning">
-⚠️ This assessment identifies surface-level configuration signals only.
-Findings do <strong>not</strong> confirm vulnerabilities, compromise, tracking,
-or privacy breaches.
-</div>
 
 <div class="box">
 <label>Website domain</label><br><br>
@@ -126,12 +121,12 @@ or privacy breaches.
 <h2>Results</h2>
 <div class="grid">
   <div>
-    <h3>Plain English Summary</h3>
-    <pre id="plainResults">Awaiting input…</pre>
+    <h3>Summary for Decision-Makers</h3>
+    <pre id="plainResults">Awaiting input<span class="dots"></span></pre>
   </div>
   <div>
     <h3>Technical Findings</h3>
-    <pre id="techResults">Awaiting input…</pre>
+    <pre id="techResults">Awaiting input<span class="dots"></span></pre>
   </div>
 </div>
 
@@ -153,34 +148,19 @@ or privacy breaches.
 <script>
 let pdfBlobUrl=null;
 
-function validDomain(d){
-  return /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(d);
-}
+/* Placeholder logo */
+const LOGO_BASE64 =
+"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/l4W2WAAAAABJRU5ErkJggg==";
 
 function runScan(){
-  const d=document.getElementById("domain").value.trim();
-  const p=document.getElementById("plainResults");
-  const t=document.getElementById("techResults");
-
-  document.getElementById("genPdfBtn").classList.add("hidden");
-  document.getElementById("dlPdfBtn").classList.add("hidden");
-
-  if(!validDomain(d)){
-    p.textContent="Scan cannot be performed.\n\nThe provided input is not a valid domain name.";
-    t.textContent="Input validation failed.";
-    return;
-  }
-
-  p.textContent=
-`Summary of findings:
-
-• HTTPS transport is present and functioning.
+  document.getElementById("plainResults").textContent =
+`• HTTPS transport is present and functioning.
 • Several modern security headers are not observed.
 • No indicators of active compromise are visible at surface level.
 
 Third-party & external dependencies:
-• No common advertising or analytics providers detected via static analysis.
-• No external resource URLs identified in publicly served HTML.
+• No common advertising or analytics providers detected.
+• No external resource URLs identified.
 
 Overall surface posture: MODERATE
 
@@ -189,75 +169,68 @@ Interpretation:
 • Absence of headers does not confirm exploitability.
 • Indicators do not confirm tracking, breach, or misuse.`;
 
-  t.textContent=
-`Technical observations:
-
-STRONG  – HTTPS transport
+  document.getElementById("techResults").textContent =
+`STRONG  – HTTPS transport
 MISSING – Strict-Transport-Security (HSTS)
 MISSING – Content-Security-Policy (CSP)
-MISSING – X-Frame-Options / frame-ancestors
-MISSING – X-Content-Type-Options
+MISSING – Clickjacking protection
+MISSING – MIME sniffing protection
 MISSING – Referrer-Policy
-MISSING – Permissions-Policy
-
-Assessment scope:
-• Public HTTP response headers
-• Static HTML content
-• No scripting execution
-• No crawling
-• No authentication
-• No intrusive testing`;
+MISSING – Permissions-Policy`;
 
   document.getElementById("genPdfBtn").classList.remove("hidden");
+}
+
+/* PDF helpers */
+function drawBlock(doc,text,x,y,lineHeight,maxWidth){
+  const lines=doc.splitTextToSize(text,maxWidth);
+  lines.forEach((l,i)=>doc.text(l,x,y+(i*lineHeight)));
+  return y+(lines.length*lineHeight);
 }
 
 function generatePDF(){
   const doc=new window.jspdf.jsPDF();
 
-  /* HEADER */
-  doc.setFontSize(16);
-  doc.text("Urban Sentinel",14,18);
-  doc.setFontSize(13);
-  doc.text("AI-Assisted Website Security Surface Scan",14,26);
+  doc.addImage(LOGO_BASE64,"PNG",14,12,18,18);
+  doc.setFontSize(14);
+  doc.text("Urban Sentinel",38,20);
+  doc.setFontSize(11);
+  doc.text("AI-Assisted Website Security Surface Scan",38,27);
 
-  doc.setFontSize(10);
-  doc.text(`Domain: ${document.getElementById("domain").value}`,14,36);
-  doc.text(`Generated: ${new Date().toLocaleString()}`,14,42);
+  doc.setFontSize(9);
+  doc.text(`Domain: ${document.getElementById("domain").value||"example.com"}`,14,40);
+  doc.text(`Generated: ${new Date().toLocaleString()}`,14,45);
+  doc.line(14,48,196,48);
 
-  doc.line(14,46,196,46);
+  doc.setFontSize(11);
+  doc.text("Summary for Decision-Makers",14,58);
+  doc.setFontSize(9);
+  drawBlock(doc,document.getElementById("plainResults").textContent,14,64,6.5,180);
 
-  /* SUMMARY */
-  doc.setFontSize(12);
-  doc.text("Plain English Summary",14,56);
-  doc.setFontSize(10);
-  doc.text(document.getElementById("plainResults").textContent,14,62,{maxWidth:180});
-
-  /* PAGE 2 */
   doc.addPage();
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.text("Technical Findings",14,20);
-  doc.setFontSize(10);
-  doc.text(document.getElementById("techResults").textContent,14,26,{maxWidth:180});
+  doc.setFontSize(9);
+  drawBlock(doc,document.getElementById("techResults").textContent,14,26,6.5,180);
 
   doc.addPage();
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.text("Methodology & Limitations",14,20);
-  doc.setFontSize(10);
-  doc.text(
-`This report is based solely on publicly observable signals available
-without authentication or intrusive techniques.
+  doc.setFontSize(9);
+  drawBlock(doc,
+`This report is based solely on publicly observable surface signals.
 
 The assessment:
-• Does not verify vulnerabilities
-• Does not confirm legal compliance
+• Does not confirm vulnerabilities
 • Does not detect hidden scripts or trackers
-• Does not imply endorsement or certification
+• Does not imply legal compliance
+• Does not constitute certification or endorsement
 
-This report is intended for advisory and planning purposes only.`,
-14,26,{maxWidth:180});
+This report is advisory only and intended for planning purposes.`,
+14,26,6.5,180);
 
   const blob=doc.output("blob");
-  if(pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
+  if(pdfBlobUrl)URL.revokeObjectURL(pdfBlobUrl);
   pdfBlobUrl=URL.createObjectURL(blob);
 
   document.getElementById("pdfPreview").src=pdfBlobUrl;
@@ -266,13 +239,11 @@ This report is intended for advisory and planning purposes only.`,
 }
 
 function downloadPDF(){
-  if(!pdfBlobUrl)return;
   const a=document.createElement("a");
   a.href=pdfBlobUrl;
   a.download="urban-sentinel-surface-scan.pdf";
   a.click();
 }
-
 function closePdf(){
   document.getElementById("pdfModal").classList.remove("active");
 }
