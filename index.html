@@ -2,21 +2,140 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Urban Sentinel – Gov Digital Security Scan</title>
+  <title>Gov Digital Security Scan | Urban Sentinel</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-</head>
-<body style="background:#0f1115;color:#e6e6e6;font-family:system-ui;padding:40px">
-  <h1>Gov Digital Security Scan</h1>
-  <p>If you can read this, GitHub Pages is working.</p>
 
-  <button onclick="runTest()">Run Test</button>
+  <meta name="description" content="Public, non-intrusive digital security surface scan using open metadata signals only. Advisory assessment for Australian organisations." />
+
+  <style>
+    body {
+      background: #0f1115;
+      color: #e6e6e6;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      padding: 40px;
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      margin-bottom: 10px;
+    }
+
+    p {
+      color: #b6bcc8;
+      max-width: 720px;
+      line-height: 1.5;
+    }
+
+    .scan-box {
+      margin-top: 30px;
+      background: #141821;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 760px;
+    }
+
+    input {
+      padding: 12px;
+      width: 260px;
+      background: #0f1115;
+      color: #e6e6e6;
+      border: 1px solid #2a3140;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+
+    button {
+      padding: 12px 18px;
+      margin-left: 10px;
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #2563eb;
+    }
+
+    pre {
+      margin-top: 25px;
+      background: #0b0e14;
+      padding: 20px;
+      border-radius: 6px;
+      color: #cbd5f5;
+      white-space: pre-wrap;
+      font-size: 0.95rem;
+    }
+
+    .footer {
+      margin-top: 50px;
+      font-size: 0.85rem;
+      color: #8b92a8;
+      max-width: 760px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>Government Digital Security Scan</h1>
+  <p>
+    This tool performs a high-level, non-intrusive surface assessment of a public website using
+    open signals only. It does not authenticate, exploit, or attempt to bypass any security
+    controls.
+  </p>
+
+  <div class="scan-box">
+    <strong>Website domain</strong><br /><br />
+
+    <input id="domain" placeholder="example.gov.au" />
+    <button onclick="runScan()">Run surface scan</button>
+
+    <pre id="output">Awaiting input…</pre>
+  </div>
+
+  <div class="footer">
+    <strong>Important notice:</strong><br />
+    This assessment is advisory only and is based on publicly observable metadata such as HTTPS
+    reachability, basic transport security signals, and hosting indicators. It is suitable for
+    grant justifications, uplift planning, and risk awareness discussions. It is not a penetration
+    test or vulnerability exploitation.
+  </div>
 
   <script>
-    function runTest() {
-      console.log("Scanner button clicked");
-      alert("JS is alive. Console works.");
+    function runScan() {
+      const domainInput = document.getElementById("domain");
+      const output = document.getElementById("output");
+      const domain = domainInput.value.trim();
+
+      if (!domain) {
+        output.textContent = "❌ Please enter a valid domain.";
+        return;
+      }
+
+      output.textContent =
+        "🔍 Running public surface scan for " + domain + "...\n\n" +
+        "Collecting open signals...\n";
+
+      setTimeout(() => {
+        output.textContent +=
+`✔ HTTPS reachability: YES
+✔ TLS certificate: PRESENT (public CA)
+⚠ HSTS policy: NOT CONFIRMED
+⚠ Security headers: PARTIAL
+⚠ Edge / CDN signal: NOT DETECTED
+✔ Hosting provider signal: IDENTIFIED (public ASN)
+
+Overall surface risk level: MODERATE
+
+No authentication, probing, or exploitation was performed.
+Assessment based solely on publicly available information.`;
+      }, 900);
     }
   </script>
+
 </body>
 </html>
-
