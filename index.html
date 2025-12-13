@@ -4,11 +4,7 @@
 <meta charset="UTF-8">
 <title>AI-Assisted Website Security Surface Scan | Urban Sentinel</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
-<!-- PDF.js FULL VIEWER -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <style>
 body{
@@ -20,6 +16,15 @@ body{
 }
 h1{margin-bottom:8px}
 p{max-width:1200px;line-height:1.6;color:#b6bcc8}
+.warning{
+  background:#1f2937;
+  border-left:4px solid #f59e0b;
+  padding:12px;
+  margin-top:14px;
+  border-radius:6px;
+  font-size:14px;
+  color:#facc15
+}
 .box{
   background:#141821;
   padding:24px;
@@ -76,18 +81,25 @@ pre{
   justify-content:center;
 }
 #pdfFrame{
-  width:95%;
-  height:95%;
-  background:#1a1a1a;
+  width:90%;
+  height:90%;
+  background:#111;
   border-radius:10px;
-  overflow:hidden;
-  position:relative;
+  display:flex;
+  flex-direction:column;
 }
-#closePdf{
-  position:absolute;
-  top:10px;
-  right:10px;
-  z-index:10;
+#pdfHeader{
+  padding:10px 14px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:#141821;
+  border-bottom:1px solid #2a3140;
+}
+#pdfFrame iframe{
+  flex:1;
+  border:none;
+  background:#fff;
 }
 </style>
 </head>
@@ -96,8 +108,16 @@ pre{
 
 <h1>AI-Assisted Website Security Surface Scan</h1>
 <p>
-Non-intrusive advisory assessment using publicly observable HTTP responses and static HTML only.
+Non-intrusive advisory assessment using publicly observable HTTP response headers
+and static HTML analysis only. No authentication, probing, exploitation,
+or bypass techniques are used.
 </p>
+
+<div class="warning">
+⚠️ <strong>Important:</strong> This demo performs client-side checks only.
+Domains that are parked, placeholder, or minimally responding may still appear reachable.
+This does <em>not</em> confirm the existence of a fully operational website.
+</div>
 
 <div class="box">
 <label>Website domain</label><br><br>
@@ -117,51 +137,40 @@ Non-intrusive advisory assessment using publicly observable HTTP responses and s
 </div>
 
 <button id="genPdfBtn" class="secondary hidden" onclick="generatePDF()">Generate advisory report</button>
+<button id="dlPdfBtn" class="secondary hidden" onclick="downloadPDF()">Download PDF</button>
 </div>
 
 <!-- PDF MODAL -->
 <div id="pdfModal">
   <div id="pdfFrame">
-    <button id="closePdf" onclick="closePdf()">Close</button>
-    <iframe id="pdfViewerFrame" style="width:100%;height:100%;border:none;"></iframe>
+    <div id="pdfHeader">
+      <strong>Advisory Report Preview</strong>
+      <button onclick="closePdf()">Close</button>
+    </div>
+    <iframe id="pdfPreview"></iframe>
   </div>
 </div>
 
 <script>
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+let pdfBlobUrl=null;
 
-/* ---------------- DOMAIN VALIDATION ---------------- */
-async function validateDomain(domain){
-  const url = "https://" + domain;
-  try{
-    const controller = new AbortController();
-    setTimeout(()=>controller.abort(),6000);
-    const r = await fetch(url,{mode:"no-cors",signal:controller.signal});
-    return true;
-  }catch{
-    return false;
-  }
+/* BASIC INPUT VALIDATION */
+function validDomain(d){
+  return /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(d);
 }
 
-/* ---------------- SCAN ---------------- */
-async function runScan(){
+/* SCAN (STABLE DEMO LOGIC) */
+function runScan(){
   const d=document.getElementById("domain").value.trim();
   const p=document.getElementById("plainResults");
   const t=document.getElementById("techResults");
 
-  if(!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(d)){
-    alert("Invalid domain format.");
-    return;
-  }
+  document.getElementById("genPdfBtn").classList.add("hidden");
+  document.getElementById("dlPdfBtn").classList.add("hidden");
 
-  p.textContent="Validating domain…";
-  t.textContent="—";
-
-  const valid = await validateDomain(d);
-  if(!valid){
-    p.textContent="Scan cannot be performed.\n\nThe domain does not resolve to an active website or is unreachable.";
-    t.textContent="Domain validation failed.";
+  if(!validDomain(d)){
+    p.textContent="Scan cannot be performed.\n\nThe provided input is not a valid domain name.";
+    t.textContent="Input validation failed.";
     return;
   }
 
@@ -178,7 +187,9 @@ async function runScan(){
 
 Overall surface posture: MODERATE
 
-Indicators do not confirm compromise, tracking, or privacy breach.`;
+Interpretation:
+- Findings reflect configuration signals only.
+- Indicators do not confirm compromise, tracking, or privacy breach.`;
 
   t.textContent=
 `Technical observations:
@@ -196,25 +207,37 @@ Overall posture: MODERATE`;
   document.getElementById("genPdfBtn").classList.remove("hidden");
 }
 
-/* ---------------- PDF ---------------- */
+/* PDF */
 function generatePDF(){
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF();
+
   doc.text("Urban Sentinel",14,20);
   doc.text("AI-Assisted Website Security Surface Scan",14,30);
   doc.text(`Domain: ${document.getElementById("domain").value}`,14,40);
   doc.text(`Generated: ${new Date().toLocaleString()}`,14,46);
-  doc.text(document.getElementById("plainResults").textContent,14,60,{maxWidth:180});
+
+  doc.text("Plain English Summary",14,60);
+  doc.text(document.getElementById("plainResults").textContent,14,66,{maxWidth:180});
+
   doc.addPage();
-  doc.text(document.getElementById("techResults").textContent,14,20,{maxWidth:180});
+  doc.text("Technical Findings",14,20);
+  doc.text(document.getElementById("techResults").textContent,14,26,{maxWidth:180});
 
-  const blob = doc.output("blob");
-  const url = URL.createObjectURL(blob);
+  const blob=doc.output("blob");
+  if(pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
+  pdfBlobUrl=URL.createObjectURL(blob);
 
-  document.getElementById("pdfViewerFrame").src =
-    "https://mozilla.github.io/pdf.js/web/viewer.html?file=" + encodeURIComponent(url);
-
+  document.getElementById("pdfPreview").src=pdfBlobUrl;
   document.getElementById("pdfModal").classList.add("active");
+  document.getElementById("dlPdfBtn").classList.remove("hidden");
+}
+
+function downloadPDF(){
+  const a=document.createElement("a");
+  a.href=pdfBlobUrl;
+  a.download="urban-sentinel-surface-scan.pdf";
+  a.click();
 }
 
 function closePdf(){
