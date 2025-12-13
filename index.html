@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <title>AI-Assisted Website Security Surface Scan | Urban Sentinel</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- jsPDF -->
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <style>
@@ -109,14 +111,11 @@ pre{
 <h1>AI-Assisted Website Security Surface Scan</h1>
 <p>
 Non-intrusive advisory assessment using publicly observable HTTP response headers
-and static HTML analysis only. No authentication, probing, exploitation,
-or bypass techniques are used.
+and static HTML analysis only.
 </p>
 
 <div class="warning">
-⚠️ <strong>Important:</strong> This demo performs client-side checks only.
-Domains that are parked, placeholder, or minimally responding may still appear reachable.
-This does <em>not</em> confirm the existence of a fully operational website.
+⚠️ This demo performs client-side checks only. Parked or placeholder domains may still appear reachable.
 </div>
 
 <div class="box">
@@ -152,29 +151,29 @@ This does <em>not</em> confirm the existence of a fully operational website.
 </div>
 
 <script>
-let pdfBlobUrl=null;
+let pdfBlobUrl = null;
 
-/* BASIC INPUT VALIDATION */
+/* Validate domain format only (honest limitation) */
 function validDomain(d){
   return /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(d);
 }
 
-/* SCAN (STABLE DEMO LOGIC) */
+/* Run scan */
 function runScan(){
-  const d=document.getElementById("domain").value.trim();
-  const p=document.getElementById("plainResults");
-  const t=document.getElementById("techResults");
+  const d = document.getElementById("domain").value.trim();
+  const p = document.getElementById("plainResults");
+  const t = document.getElementById("techResults");
 
   document.getElementById("genPdfBtn").classList.add("hidden");
   document.getElementById("dlPdfBtn").classList.add("hidden");
 
   if(!validDomain(d)){
-    p.textContent="Scan cannot be performed.\n\nThe provided input is not a valid domain name.";
-    t.textContent="Input validation failed.";
+    p.textContent = "Scan cannot be performed.\n\nThe provided input is not a valid domain name.";
+    t.textContent = "Input validation failed.";
     return;
   }
 
-  p.textContent=
+  p.textContent =
 `Summary of findings:
 
 - HTTPS Transport: STRONG
@@ -191,7 +190,7 @@ Interpretation:
 - Findings reflect configuration signals only.
 - Indicators do not confirm compromise, tracking, or privacy breach.`;
 
-  t.textContent=
+  t.textContent =
 `Technical observations:
 
 STRONG - HTTPS Transport
@@ -207,33 +206,39 @@ Overall posture: MODERATE`;
   document.getElementById("genPdfBtn").classList.remove("hidden");
 }
 
-/* PDF */
+/* Generate PDF — FIXED */
 function generatePDF(){
-  const {jsPDF}=window.jspdf;
-  const doc=new jsPDF();
+  try{
+    const doc = new window.jspdf.jsPDF();
 
-  doc.text("Urban Sentinel",14,20);
-  doc.text("AI-Assisted Website Security Surface Scan",14,30);
-  doc.text(`Domain: ${document.getElementById("domain").value}`,14,40);
-  doc.text(`Generated: ${new Date().toLocaleString()}`,14,46);
+    doc.text("Urban Sentinel",14,20);
+    doc.text("AI-Assisted Website Security Surface Scan",14,30);
+    doc.text(`Domain: ${document.getElementById("domain").value}`,14,40);
+    doc.text(`Generated: ${new Date().toLocaleString()}`,14,46);
 
-  doc.text("Plain English Summary",14,60);
-  doc.text(document.getElementById("plainResults").textContent,14,66,{maxWidth:180});
+    doc.text("Plain English Summary",14,60);
+    doc.text(document.getElementById("plainResults").textContent,14,66,{maxWidth:180});
 
-  doc.addPage();
-  doc.text("Technical Findings",14,20);
-  doc.text(document.getElementById("techResults").textContent,14,26,{maxWidth:180});
+    doc.addPage();
+    doc.text("Technical Findings",14,20);
+    doc.text(document.getElementById("techResults").textContent,14,26,{maxWidth:180});
 
-  const blob=doc.output("blob");
-  if(pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
-  pdfBlobUrl=URL.createObjectURL(blob);
+    const blob = doc.output("blob");
+    if(pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
+    pdfBlobUrl = URL.createObjectURL(blob);
 
-  document.getElementById("pdfPreview").src=pdfBlobUrl;
-  document.getElementById("pdfModal").classList.add("active");
-  document.getElementById("dlPdfBtn").classList.remove("hidden");
+    document.getElementById("pdfPreview").src = pdfBlobUrl;
+    document.getElementById("pdfModal").classList.add("active");
+    document.getElementById("dlPdfBtn").classList.remove("hidden");
+
+  }catch(e){
+    alert("Failed to generate PDF. Please try again.");
+    console.error(e);
+  }
 }
 
 function downloadPDF(){
+  if(!pdfBlobUrl) return;
   const a=document.createElement("a");
   a.href=pdfBlobUrl;
   a.download="urban-sentinel-surface-scan.pdf";
