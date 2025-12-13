@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="description"
-    content="AI-assisted, non-intrusive website security surface scan using publicly observable signals only. Advisory assessment for organisations." />
+    content="AI-assisted, non-intrusive website security surface scan using publicly observable HTTP response headers only." />
 
   <!-- jsPDF -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -27,7 +27,7 @@
 
     p {
       color: #b6bcc8;
-      max-width: 880px;
+      max-width: 900px;
       line-height: 1.6;
     }
 
@@ -36,7 +36,7 @@
       background: #141821;
       padding: 26px;
       border-radius: 10px;
-      max-width: 900px;
+      max-width: 940px;
     }
 
     label {
@@ -55,13 +55,14 @@
 
     button {
       padding: 12px 18px;
-      margin-left: 10px;
       background: #3b82f6;
       color: #fff;
       border: none;
       border-radius: 6px;
       font-size: 1rem;
       cursor: pointer;
+      margin-right: 10px;
+      margin-top: 10px;
     }
 
     button.secondary {
@@ -87,11 +88,15 @@
       line-height: 1.5;
     }
 
+    .actions {
+      margin-top: 18px;
+    }
+
     .footer {
       margin-top: 60px;
       font-size: 0.85rem;
       color: #8b92a8;
-      max-width: 900px;
+      max-width: 940px;
     }
   </style>
 </head>
@@ -101,38 +106,38 @@
   <h1>AI-Assisted Website Security Surface Scan</h1>
 
   <p>
-    This tool uses AI-assisted logic to interpret publicly observable website security signals,
-    including HTTP response headers. The assessment is non-intrusive and advisory in nature.
+    This tool uses AI-assisted logic to interpret publicly observable website security
+    signals, limited to HTTP response headers. The assessment is advisory and non-intrusive.
   </p>
 
   <p>
     No authentication, exploitation, traffic manipulation, or bypass techniques are used.
-    The results are intended to support risk awareness, uplift planning, and documentation
-    for business or funding purposes.
+    Results are intended for risk awareness, uplift planning, and documentation support.
   </p>
 
   <div class="scan-box">
     <label for="domain">Website domain</label><br /><br />
 
     <input id="domain" placeholder="example.com" />
-
     <button onclick="runScan()">Run AI surface scan</button>
 
-    <button
-      id="saveBtn"
-      class="secondary hidden"
-      onclick="downloadPDF()">
-      Save report (PDF)
-    </button>
-
     <pre id="output">Awaiting input…</pre>
+
+    <div class="actions">
+      <button id="viewBtn" class="secondary hidden" onclick="openReportTab()">
+        View / Save report
+      </button>
+
+      <button id="pdfBtn" class="secondary hidden" onclick="downloadPDF()">
+        Download PDF
+      </button>
+    </div>
   </div>
 
   <div class="footer">
     <strong>Methodology & Disclaimer</strong><br />
-    This report is generated using AI-assisted interpretation of publicly observable HTTP
-    response headers. It does not constitute a penetration test, certification, or compliance
-    audit. Findings reflect surface-level exposure only and may change over time.
+    This assessment is generated using AI-assisted interpretation of publicly observable
+    HTTP response headers only. It is not a penetration test, certification, or compliance audit.
   </div>
 
   <script>
@@ -142,7 +147,8 @@
     async function runScan() {
       const domainInput = document.getElementById("domain");
       const output = document.getElementById("output");
-      const saveBtn = document.getElementById("saveBtn");
+      const viewBtn = document.getElementById("viewBtn");
+      const pdfBtn = document.getElementById("pdfBtn");
 
       let domain = domainInput.value.trim();
 
@@ -156,11 +162,12 @@
       }
 
       lastDomain = domain.replace(/^https?:\/\//, "");
-      saveBtn.classList.add("hidden");
+      viewBtn.classList.add("hidden");
+      pdfBtn.classList.add("hidden");
 
       output.textContent =
         "🤖 AI surface scan in progress for " + domain + "...\n\n" +
-        "Collecting public security signals...\n";
+        "Collecting publicly observable security headers...\n";
 
       try {
         const response = await fetch(
@@ -180,7 +187,7 @@
 
         let missing = 0;
         let report =
-          "AI-Assisted Header Assessment\n\n";
+          "AI-Assisted Website Security Surface Scan\n\n";
 
         checks.forEach(([header, label]) => {
           const value = headers.get(header);
@@ -199,14 +206,16 @@
 
         report += `\nOverall surface risk level: ${risk}\n\n`;
         report +=
-          "AI interpretation notes:\n" +
-          "- Results reflect surface-level exposure only\n" +
+          "Interpretation notes:\n" +
+          "- Findings reflect surface-level exposure only\n" +
           "- Missing headers indicate increased risk, not confirmed vulnerabilities\n" +
           "- No intrusive testing was performed\n";
 
         lastReportText = report;
         output.textContent = report;
-        saveBtn.classList.remove("hidden");
+
+        viewBtn.classList.remove("hidden");
+        pdfBtn.classList.remove("hidden");
 
       } catch (err) {
         output.textContent =
@@ -214,6 +223,42 @@
           "This may be due to request blocking or network configuration.\n" +
           "It does not imply a security failure.";
       }
+    }
+
+    function openReportTab() {
+      const reportWindow = window.open("", "_blank");
+      reportWindow.document.write(`
+        <html>
+          <head>
+            <title>AI Security Surface Scan Report</title>
+            <style>
+              body {
+                font-family: system-ui, sans-serif;
+                padding: 40px;
+                line-height: 1.6;
+              }
+              h1 { margin-bottom: 10px; }
+              pre {
+                background: #f4f4f4;
+                padding: 20px;
+                white-space: pre-wrap;
+              }
+            </style>
+          </head>
+          <body>
+            <h1>AI-Assisted Website Security Surface Scan</h1>
+            <p><strong>Domain:</strong> ${lastDomain}</p>
+            <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+            <pre>${lastReportText}</pre>
+            <p>
+              <strong>Disclaimer:</strong><br />
+              Advisory assessment based solely on publicly observable HTTP response headers.
+              Not a penetration test or compliance certification.
+            </p>
+          </body>
+        </html>
+      `);
+      reportWindow.document.close();
     }
 
     function downloadPDF() {
@@ -243,7 +288,7 @@
         20
       );
 
-      doc.save(`urban-sentinel-ai-security-scan-${lastDomain}.pdf`);
+      doc.save(`urban-sentinel-ai-surface-scan-${lastDomain}.pdf`);
     }
   </script>
 
