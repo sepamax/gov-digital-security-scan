@@ -5,7 +5,7 @@
 <title>AI-Assisted Website Security Surface Scan | Urban Sentinel</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!-- PDF.js -->
+<!-- PDF.js FULL VIEWER -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js"></script>
@@ -75,25 +75,19 @@ pre{
   align-items:center;
   justify-content:center;
 }
-#pdfContainer{
-  width:92%;
-  height:92%;
+#pdfFrame{
+  width:95%;
+  height:95%;
   background:#1a1a1a;
   border-radius:10px;
-  display:flex;
-  flex-direction:column;
-}
-#pdfHeader{
-  padding:10px 14px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  background:#141821;
-  border-bottom:1px solid #2a3140;
-}
-#viewerContainer{
-  flex:1;
   overflow:hidden;
+  position:relative;
+}
+#closePdf{
+  position:absolute;
+  top:10px;
+  right:10px;
+  z-index:10;
 }
 </style>
 </head>
@@ -102,8 +96,7 @@ pre{
 
 <h1>AI-Assisted Website Security Surface Scan</h1>
 <p>
-Non-intrusive advisory assessment using publicly observable HTTP response headers
-and static analysis of publicly served HTML only.
+Non-intrusive advisory assessment using publicly observable HTTP responses and static HTML only.
 </p>
 
 <div class="box">
@@ -128,16 +121,9 @@ and static analysis of publicly served HTML only.
 
 <!-- PDF MODAL -->
 <div id="pdfModal">
-  <div id="pdfContainer">
-    <div id="pdfHeader">
-      <strong>Advisory Report Preview</strong>
-      <button onclick="closePdf()">Close</button>
-    </div>
-
-    <div id="viewerContainer">
-      <div id="toolbarContainer"></div>
-      <div id="viewer" class="pdfViewer"></div>
-    </div>
+  <div id="pdfFrame">
+    <button id="closePdf" onclick="closePdf()">Close</button>
+    <iframe id="pdfViewerFrame" style="width:100%;height:100%;border:none;"></iframe>
   </div>
 </div>
 
@@ -145,18 +131,41 @@ and static analysis of publicly served HTML only.
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
-let pdfBlobUrl=null;
-let pdfViewer, pdfLinkService, eventBus;
+/* ---------------- DOMAIN VALIDATION ---------------- */
+async function validateDomain(domain){
+  const url = "https://" + domain;
+  try{
+    const controller = new AbortController();
+    setTimeout(()=>controller.abort(),6000);
+    const r = await fetch(url,{mode:"no-cors",signal:controller.signal});
+    return true;
+  }catch{
+    return false;
+  }
+}
 
-/* --- Demo scan (logic already validated earlier) --- */
-function runScan(){
-  const domain=document.getElementById("domain").value.trim();
-  if(!domain){
-    alert("Enter a domain");
+/* ---------------- SCAN ---------------- */
+async function runScan(){
+  const d=document.getElementById("domain").value.trim();
+  const p=document.getElementById("plainResults");
+  const t=document.getElementById("techResults");
+
+  if(!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(d)){
+    alert("Invalid domain format.");
     return;
   }
 
-  document.getElementById("plainResults").textContent =
+  p.textContent="Validating domain…";
+  t.textContent="—";
+
+  const valid = await validateDomain(d);
+  if(!valid){
+    p.textContent="Scan cannot be performed.\n\nThe domain does not resolve to an active website or is unreachable.";
+    t.textContent="Domain validation failed.";
+    return;
+  }
+
+  p.textContent=
 `Summary of findings:
 
 - HTTPS Transport: STRONG
@@ -167,15 +176,11 @@ function runScan(){
 - Referrer Policy: MISSING
 - Permissions Policy: MISSING
 
-Third-party & external dependencies:
-- No common advertising or analytics providers detected.
-- No external resource URLs detected.
-
 Overall surface posture: MODERATE
 
 Indicators do not confirm compromise, tracking, or privacy breach.`;
 
-  document.getElementById("techResults").textContent =
+  t.textContent=
 `Technical observations:
 
 STRONG - HTTPS Transport
@@ -186,58 +191,30 @@ MISSING - MIME Sniffing Protection
 MISSING - Referrer Policy
 MISSING - Permissions Policy
 
-Third-party & external dependencies:
-- None detected
-
 Overall posture: MODERATE`;
 
   document.getElementById("genPdfBtn").classList.remove("hidden");
 }
 
-/* --- PDF GENERATION --- */
+/* ---------------- PDF ---------------- */
 function generatePDF(){
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF();
-
   doc.text("Urban Sentinel",14,20);
   doc.text("AI-Assisted Website Security Surface Scan",14,30);
-  doc.text("Domain: example.com",14,40);
+  doc.text(`Domain: ${document.getElementById("domain").value}`,14,40);
   doc.text(`Generated: ${new Date().toLocaleString()}`,14,46);
-
-  doc.text("Plain English Summary",14,60);
-  doc.text(document.getElementById("plainResults").textContent,14,66,{maxWidth:180});
-
+  doc.text(document.getElementById("plainResults").textContent,14,60,{maxWidth:180});
   doc.addPage();
-  doc.text("Technical Findings",14,20);
-  doc.text(document.getElementById("techResults").textContent,14,26,{maxWidth:180});
+  doc.text(document.getElementById("techResults").textContent,14,20,{maxWidth:180});
 
-  const blob=doc.output("blob");
-  if(pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
-  pdfBlobUrl=URL.createObjectURL(blob);
+  const blob = doc.output("blob");
+  const url = URL.createObjectURL(blob);
 
-  openPdf(pdfBlobUrl);
-}
+  document.getElementById("pdfViewerFrame").src =
+    "https://mozilla.github.io/pdf.js/web/viewer.html?file=" + encodeURIComponent(url);
 
-/* --- PDF.JS VIEWER --- */
-function openPdf(url){
   document.getElementById("pdfModal").classList.add("active");
-
-  eventBus = new pdfjsViewer.EventBus();
-  pdfLinkService = new pdfjsViewer.PDFLinkService({ eventBus });
-
-  pdfViewer = new pdfjsViewer.PDFViewer({
-    container: document.getElementById("viewerContainer"),
-    viewer: document.getElementById("viewer"),
-    eventBus,
-    linkService: pdfLinkService,
-  });
-
-  pdfLinkService.setViewer(pdfViewer);
-
-  pdfjsLib.getDocument(url).promise.then(pdf=>{
-    pdfViewer.setDocument(pdf);
-    pdfLinkService.setDocument(pdf);
-  });
 }
 
 function closePdf(){
