@@ -1,1 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Security Scan Report</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body style="font-family:system-ui;padding:40px">
+
+<h1>AI-Assisted Website Security Surface Scan</h1>
+
+<p><strong>Domain:</strong> <span id="domain"></span></p>
+<p><strong>Generated:</strong> <span id="time"></span></p>
+
+<pre id="report" style="background:#f4f4f4;padding:20px"></pre>
+
+<button onclick="window.print()">Print / Save</button>
+
+<script>
+document.getElementById("domain").textContent =
+  sessionStorage.getItem("scanDomain") || "—";
+
+document.getElementById("report").textContent =
+  sessionStorage.getItem("scanReport") || "No report data.";
+
+document.getElementById("time").textContent =
+  new Date().toLocaleString();
+</script>
+
+</body>
+</html>
 
