@@ -6,25 +6,155 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-body{font-family:system-ui;background:#0f1115;color:#e6e6e6;padding:40px;margin:0}
-.box{background:#141821;padding:24px;border-radius:10px;max-width:1200px;margin-top:30px}
-input{padding:12px;width:260px;border-radius:6px;border:1px solid #2a3140;background:#0f1115;color:#e6e6e6}
-button{padding:12px 18px;margin-left:10px;border-radius:6px;border:none;cursor:pointer;background:#3b82f6;color:white;opacity:.4}
+/* ===== BASE ===== */
+body{
+  font-family:system-ui;
+  background:#0f1115;
+  color:#e6e6e6;
+  padding:40px;
+  margin:0
+}
+h1{margin-top:0}
+.box{
+  background:#141821;
+  padding:20px;
+  border-radius:10px;
+  max-width:1200px;
+  margin-top:24px
+}
+.hidden{display:none}
+
+/* ===== INPUT / BUTTONS ===== */
+input{
+  padding:12px;
+  width:260px;
+  border-radius:6px;
+  border:1px solid #2a3140;
+  background:#0f1115;
+  color:#e6e6e6
+}
+button{
+  padding:12px 18px;
+  margin-left:10px;
+  border-radius:6px;
+  border:none;
+  cursor:pointer;
+  background:#3b82f6;
+  color:white;
+  opacity:.4
+}
 button.enabled{opacity:1}
-button.secondary{background:#1f2937;margin-top:14px}
-button.hidden{display:none}
-pre{background:#0b0e14;padding:18px;border-radius:8px;white-space:pre-wrap;line-height:1.6;color:#cbd5f5;min-height:120px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
-.matrix{margin-top:18px;background:#0b0e14;border-radius:10px;padding:16px 18px;border:1px solid #1f2937}
-.matrix.hidden{display:none}
-.matrix-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1f2937}
+button.secondary{background:#1f2937}
+button:disabled{cursor:not-allowed}
+
+/* ===== LAYOUT ===== */
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:18px;
+  margin-top:18px
+}
+pre{
+  background:#0b0e14;
+  padding:14px;
+  border-radius:8px;
+  white-space:pre-wrap;
+  line-height:1.5;
+  color:#cbd5f5;
+  min-height:90px
+}
+
+/* ===== ANIMATED DOTS ===== */
+.dots::after{
+  content:"";
+  display:inline-block;
+  width:1em;
+  animation:ellipsis 1.4s infinite;
+  opacity:.7
+}
+@keyframes ellipsis{
+  0%{content:""}
+  25%{content:"."}
+  50%{content:".."}
+  75%{content:"..."}
+  100%{content:""}
+}
+
+/* ===== TOP INDICATOR PANEL ===== */
+.indicators{
+  border:2px solid #1f2937;
+  background:#0b0e14;
+}
+.indicators h2{
+  margin-top:0;
+  font-size:20px
+}
+.matrix-row{
+  display:flex;
+  justify-content:space-between;
+  padding:8px 0;
+  border-bottom:1px solid #1f2937
+}
 .matrix-row:last-child{border-bottom:none}
-.pill{font-size:12px;padding:3px 10px;border-radius:999px;font-weight:600}
+.pill{
+  font-size:12px;
+  padding:3px 10px;
+  border-radius:999px;
+  font-weight:600
+}
 .strong{background:#064e3b;color:#6ee7b7}
 .weak{background:#3f2f1d;color:#fcd34d}
 .missing{background:#3f1d1d;color:#fca5a5}
-.dots::after{content:"";display:inline-block;width:1em;animation:ellipsis 1.4s infinite;opacity:.7}
-@keyframes ellipsis{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}100%{content:""}}
+
+/* ===== CTA GLOW ===== */
+.glow{
+  display:inline-block;
+  margin-left:14px;
+  font-size:14px;
+  color:#93c5fd;
+  animation:pulse 2s infinite
+}
+@keyframes pulse{
+  0%{opacity:.5}
+  50%{opacity:1}
+  100%{opacity:.5}
+}
+
+/* ===== MODAL PREVIEW ===== */
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.75);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:9999
+}
+.modal.active{display:flex}
+.modal-content{
+  background:#fff;
+  width:90%;
+  max-width:1100px;
+  height:85vh;
+  border-radius:12px;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column
+}
+.modal-header{
+  background:#111827;
+  color:#e5e7eb;
+  padding:12px 16px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center
+}
+.modal-body{flex:1}
+.modal-body iframe{
+  width:100%;
+  height:100%;
+  border:none
+}
 </style>
 </head>
 
@@ -33,54 +163,59 @@ pre{background:#0b0e14;padding:18px;border-radius:8px;white-space:pre-wrap;line-
 <h1>AI-Assisted Website Security Surface Scan</h1>
 
 <div class="box">
-<label>Website domain</label><br><br>
+  <label>Website domain</label><br><br>
+  <input id="domain" placeholder="e.g. yoursite.com" oninput="checkDomain()">
+  <button id="scanBtn" disabled onclick="handleScan()">Run AI surface scan</button>
+</div>
 
-<input id="domain" placeholder="e.g. yoursite.com" oninput="checkDomain()">
-<button id="scanBtn" disabled onclick="handleScan()">Run AI surface scan</button>
-
-<div id="statusMatrix" class="matrix hidden">
-  <strong>Surface Security Indicators</strong>
+<!-- TOP INDICATORS (AFTER SCAN ONLY) -->
+<div id="indicatorBox" class="box indicators hidden">
+  <h2>Surface Security Indicators</h2>
   <div id="matrixRows"></div>
+
+  <!-- RESERVED FUTURE SECTION (INVISIBLE, ZERO HEIGHT) -->
+  <div id="futureExpansion" class="hidden"></div>
 </div>
 
-<h2>Results</h2>
-<div class="grid">
-  <div>
-    <h3>Summary for Decision-Makers</h3>
-    <pre id="plainResults">Awaiting input<span class="dots"></span></pre>
+<!-- RESULTS (ALWAYS PRESENT) -->
+<div class="box">
+  <div class="grid">
+    <div>
+      <h3>Summary for Decision-Makers</h3>
+      <pre id="plainResults">Awaiting input<span class="dots"></span></pre>
+    </div>
+    <div>
+      <h3>Technical Findings</h3>
+      <pre id="techResults">Awaiting input<span class="dots"></span></pre>
+    </div>
   </div>
-  <div>
-    <h3>Technical Findings</h3>
-    <pre id="techResults">Awaiting input<span class="dots"></span></pre>
+
+  <!-- GENERATE REPORT CTA -->
+  <div style="margin-top:18px">
+    <button id="genReportBtn" class="secondary hidden" onclick="openReportModal()">
+      Generate advisory report
+    </button>
+    <span id="glowText" class="glow hidden">
+      Generate full scan results to find out more →
+    </span>
   </div>
 </div>
 
-<!-- GENERATE REPORT CTA -->
-<button
-  id="genReportBtn"
-  class="secondary hidden"
-  onclick="openReportPreview()"
->
-Generate advisory report
-</button>
-
-<p id="reportHelper" class="hidden" style="margin-top:10px;font-size:14px;color:#9ca3af;max-width:700px">
-Generate a full advisory report including risk explanation, grant-ready
-supporting language, and a printable PDF summary for internal or
-government review.
-</p>
-</div>
-
-<!-- REPORT PREVIEW (HIDDEN UNTIL CLICK) -->
-<div id="reportPreview" class="box hidden">
-  <h2>Advisory Report Preview</h2>
-  <iframe
-    id="reportFrame"
-    style="width:100%;height:700px;border:1px solid #1f2937;border-radius:8px;background:#fff"
-  ></iframe>
+<!-- MODAL REPORT PREVIEW -->
+<div id="reportModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <strong>Advisory Report Preview</strong>
+      <button onclick="closeReportModal()">Close</button>
+    </div>
+    <div class="modal-body">
+      <iframe id="reportFrame"></iframe>
+    </div>
+  </div>
 </div>
 
 <script>
+/* ===== STATE ===== */
 let scanCompleted=false;
 
 const indicators=[
@@ -93,6 +228,7 @@ const indicators=[
   {label:"Permissions Policy",status:"MISSING"}
 ];
 
+/* ===== HELPERS ===== */
 function isValidDomain(v){
   return /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(v);
 }
@@ -106,8 +242,7 @@ function checkDomain(){
 }
 
 function handleScan(){
-  if(!scanCompleted) runScan();
-  else resetScan();
+  scanCompleted ? resetScan() : runScan();
 }
 
 function runScan(){
@@ -115,8 +250,10 @@ function runScan(){
   if(!isValidDomain(domain)) return;
 
   scanCompleted=true;
+
+  // show top indicators
   renderMatrix();
-  document.getElementById("statusMatrix").classList.remove("hidden");
+  document.getElementById("indicatorBox").classList.remove("hidden");
 
   document.getElementById("plainResults").textContent=
 `• Secure transport is present and functioning.
@@ -138,16 +275,16 @@ Overall surface posture: MODERATE`;
   btn.classList.add("enabled");
 
   document.getElementById("genReportBtn").classList.remove("hidden");
-  document.getElementById("reportHelper").classList.remove("hidden");
+  document.getElementById("glowText").classList.remove("hidden");
 }
 
 function resetScan(){
   scanCompleted=false;
   document.getElementById("domain").value="";
-  document.getElementById("statusMatrix").classList.add("hidden");
+  document.getElementById("indicatorBox").classList.add("hidden");
   document.getElementById("genReportBtn").classList.add("hidden");
-  document.getElementById("reportHelper").classList.add("hidden");
-  document.getElementById("reportPreview").classList.add("hidden");
+  document.getElementById("glowText").classList.add("hidden");
+  closeReportModal();
 
   document.getElementById("plainResults").innerHTML="Awaiting input<span class='dots'></span>";
   document.getElementById("techResults").innerHTML="Awaiting input<span class='dots'></span>";
@@ -166,15 +303,21 @@ function renderMatrix(){
   indicators.forEach(i=>{
     const r=document.createElement("div");
     r.className="matrix-row";
-    r.innerHTML=`<span>${i.label}</span><span class="pill ${i.status.toLowerCase()}">${i.status}</span>`;
+    r.innerHTML=
+      `<span>${i.label}</span>
+       <span class="pill ${i.status.toLowerCase()}">${i.status}</span>`;
     c.appendChild(r);
   });
 }
 
-function openReportPreview(){
+/* ===== MODAL ===== */
+function openReportModal(){
   document.getElementById("reportFrame").src="report.html";
-  document.getElementById("reportPreview").classList.remove("hidden");
-  document.getElementById("reportPreview").scrollIntoView({behavior:"smooth"});
+  document.getElementById("reportModal").classList.add("active");
+}
+function closeReportModal(){
+  document.getElementById("reportModal").classList.remove("active");
+  document.getElementById("reportFrame").src="";
 }
 </script>
 
