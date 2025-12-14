@@ -205,10 +205,11 @@ pre{
 <script>
 let pdfBlobUrl=null;
 
+/* Replace with your real base64 logo */
 const LOGO_SRC =
 "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/l4W2WAAAAABJRU5ErkJggg==";
 
-/* CANONICAL INDICATORS + CONTEXT */
+/* CANONICAL INDICATORS */
 const indicators = [
   {
     label:"HTTPS Transport",
@@ -307,37 +308,59 @@ function drawBlock(doc,text,x,y,lineHeight,maxWidth){
 function generatePDF(){
   const doc=new window.jspdf.jsPDF();
 
+  /* HEADER */
   doc.addImage(LOGO_SRC,"PNG",14,12,18,18);
   doc.setFontSize(14);
-  doc.text("Urban Sentinel",38,20);
+  doc.text("Urban Sentinel",38,18);
+  doc.setFontSize(9);
+  doc.text("ABN XX XXX XXX XXX",38,24);
+  doc.text("https://urbansentinel.com.au",38,29);
+
   doc.setFontSize(11);
-  doc.text("AI-Assisted Website Security Surface Scan",38,27);
+  doc.text("AI-Assisted Website Security Surface Scan",14,42);
 
   doc.setFontSize(9);
-  doc.text(`Domain: ${document.getElementById("domain").value||"example.com"}`,14,40);
-  doc.text(`Generated: ${new Date().toLocaleString()}`,14,45);
-  doc.line(14,48,196,48);
+  doc.text(`Domain assessed: ${document.getElementById("domain").value || "example.com"}`,14,50);
+  doc.text(`Assessment time: ${new Date().toLocaleString()}`,14,55);
+  doc.line(14,58,196,58);
 
+  /* SURFACE INDICATORS */
   doc.setFontSize(11);
-  doc.text("Surface Security Indicators",14,58);
+  doc.text("Surface Security Indicators",14,70);
   doc.setFontSize(9);
   drawBlock(
     doc,
     indicators.map(i=>`${i.status} – ${i.label}`).join("\n"),
-    14,64,6.5,180
+    14,76,6.5,180
   );
 
+  /* CONTEXT */
   doc.addPage();
   doc.setFontSize(11);
   doc.text("Contextual Interpretation of Findings",14,20);
   doc.setFontSize(9);
   indicators.forEach((i,idx)=>{
-    drawBlock(
-      doc,
-      `${i.label} — ${i.context}`,
-      14,26 + (idx*18),6.5,180
-    );
+    drawBlock(doc,`${i.label} — ${i.context}`,14,26+(idx*18),6.5,180);
   });
+
+  /* DISCLOSURE */
+  doc.addPage();
+  doc.setFontSize(11);
+  doc.text("Assessment Integrity & Disclosure",14,20);
+  doc.setFontSize(9);
+  drawBlock(
+    doc,
+`This report was generated using automated analysis of publicly observable website response behaviour at the time of assessment.
+
+Findings are based on actual data observed during the scan and have not been fabricated, inferred beyond available signals, or manually altered.
+
+The assessment reflects configuration indicators only and is time-specific. Website behaviour may change after the scan was performed.
+
+No intrusive testing, authentication, exploitation, or bypass techniques were used.
+
+This report does not confirm vulnerabilities, compromise, tracking activity, or legal compliance and is provided for advisory and planning purposes only.`,
+    14,26,6.5,180
+  );
 
   const blob=doc.output("blob");
   if(pdfBlobUrl)URL.revokeObjectURL(pdfBlobUrl);
@@ -353,7 +376,9 @@ function downloadPDF(){
   a.download="urban-sentinel-surface-scan.pdf";
   a.click();
 }
-function closePdf(){document.getElementById("pdfModal").classList.remove("active")}
+function closePdf(){
+  document.getElementById("pdfModal").classList.remove("active");
+}
 </script>
 
 </body>
