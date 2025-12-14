@@ -5,49 +5,16 @@
 <title>AI-Assisted Website Security Surface Scan</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body{
-  font-family:system-ui;
-  padding:40px;
-  max-width:900px;
-  margin:auto;
-  color:#111
-}
-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  border-bottom:2px solid #e5e7eb;
-  padding-bottom:16px
-}
+body{font-family:system-ui;padding:40px;max-width:900px;margin:auto;color:#111}
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #e5e7eb;padding-bottom:16px}
 header img{height:48px}
-.header-right{
-  text-align:right;
-  font-size:12px;
-  color:#444
-}
+.header-right{font-size:12px;text-align:right;color:#444}
 h1{margin-top:24px}
 h2{margin-top:36px}
-table{
-  width:100%;
-  border-collapse:collapse;
-  margin-top:16px
-}
-td,th{
-  border-bottom:1px solid #ddd;
-  padding:8px;
-  text-align:left
-}
-pre{
-  background:#f4f4f5;
-  padding:14px;
-  border-radius:8px;
-  white-space:pre-wrap
-}
-.footer{
-  margin-top:40px;
-  font-size:12px;
-  color:#555
-}
+table{width:100%;border-collapse:collapse;margin-top:16px}
+td,th{border-bottom:1px solid #ddd;padding:8px}
+pre{background:#f4f4f5;padding:14px;border-radius:8px;white-space:pre-wrap}
+.footer{margin-top:40px;font-size:12px;color:#555}
 button{margin-top:30px}
 @media print{button{display:none}}
 </style>
@@ -56,7 +23,7 @@ button{margin-top:30px}
 <body>
 
 <header>
-  <img src="urban-sentinel-logo.png" alt="Urban Sentinel logo">
+  <img src="urban-sentinel-logo.png">
   <div class="header-right">
     Urban Sentinel Pty Ltd<br>
     ABN: 00 000 000 000
@@ -76,94 +43,37 @@ button{margin-top:30px}
 <h2>Plain English Summary</h2>
 <pre id="summary"></pre>
 
-<h2>Observed Risk Implications</h2>
+<h2>Edge Protection & Platform Posture</h2>
+<div id="edgeSection"></div>
 
-<p><strong>HTTPS Transport</strong><br>
-Where HTTPS is present and correctly enforced, data exchanged between users
-and the website benefits from encryption in transit. This reduces exposure
-to interception, manipulation, or passive monitoring of network traffic.
-</p>
+<h2>Geographic Exposure & Locality Alignment</h2>
+<div id="geoSection"></div>
 
-<p><strong>HTTP Strict Transport Security (HSTS)</strong><br>
-Where HSTS is not observed, browsers may permit fallback to unencrypted
-connections under certain conditions. This increases exposure to downgrade
-and interception scenarios on hostile or misconfigured networks.
-</p>
-
-<p><strong>Content Security Policy (CSP)</strong><br>
-The absence of a CSP limits a site’s ability to explicitly control trusted
-content sources. This increases susceptibility to script injection,
-unexpected third-party execution, and supply-chain driven compromise.
-</p>
-
-<p><strong>Clickjacking Protection</strong><br>
-Weak or missing clickjacking controls may allow a site to be embedded within
-external frames. In some scenarios, this can be leveraged to manipulate user
-actions without clear visibility or intent.
-</p>
-
-<p><strong>MIME Sniffing Protection</strong><br>
-Without explicit MIME handling controls, browsers may reinterpret content
-types. This increases the risk of unintended script execution when content
-is misclassified or manipulated.
-</p>
-
-<p><strong>Referrer Policy</strong><br>
-An undefined referrer policy may result in internal URLs or contextual data
-being shared externally during navigation, increasing unintended information
-exposure.
-</p>
-
-<p><strong>Permissions Policy</strong><br>
-Where no permissions policy is observed, browser feature access defaults to
-broader allowances. This increases reliance on browser behaviour rather than
-explicit limitation of sensitive capabilities.
-</p>
+<h2>Transport Security & TLS Posture</h2>
+<div id="tlsSection"></div>
 
 <h2>Assessment Integrity & Disclosure</h2>
 <p>
 This report is based on automated analysis of publicly observable website
 behaviour at the time of assessment. It evaluates surface-level configuration
-indicators only and does not perform penetration testing, exploit
-development, vulnerability scanning, or active probing.
-</p>
-<p>
-Findings do not confirm exploitability, unauthorised access, compromise, or
-breach. Results are time-specific and may change as configurations,
-infrastructure, or third-party services are updated.
+signals only and does not perform penetration testing, exploitation, or
+intrusive probing.
 </p>
 
-<h2>Professional Recommendation & Engagement Position</h2>
+<h2>Professional Recommendation</h2>
 <p>
-The risks identified in this assessment relate to modern browser behaviour,
-client-side execution controls, and evolving attack techniques that require
-specialist knowledge to address correctly and sustainably.
-</p>
-<p>
-Urban Sentinel is specifically structured to design, implement, and validate
-AI-driven security uplift across web platforms, ensuring changes align with
-current threat intelligence, platform behaviour, and regulatory
-expectations.
-</p>
-<p>
-While clients remain free to engage alternative providers, remediation of
-the identified risks is strongly recommended to be undertaken by a
-specialised capability with demonstrated expertise in AI-assisted security
-assessment and implementation.
+The security posture characteristics identified in this assessment reflect
+interactions between platform configuration, exposure alignment, and evolving
+attack techniques. Addressing these considerations typically requires
+AI-assisted analysis and automation to ensure changes remain effective and
+sustainable over time.
 </p>
 
 <h2>Government Grant & Advisory Pathways</h2>
-<p>
-This report may be used as supporting evidence for government-funded digital
-uplift, cyber resilience, or modernisation programs. Where funding is
-obtained, implementation is expected to be delivered by a suitably capable
-provider aligned with the scope and complexity of the identified risks.
-</p>
-
 <ul>
 <li>Cyber Wardens Program — https://www.cyberwardens.gov.au</li>
-<li>ASD / ACSC Small Business Cyber Guidance — https://www.cyber.gov.au</li>
-<li>State-based small business digital grants (availability varies)</li>
+<li>ASD / ACSC Guidance — https://www.cyber.gov.au</li>
+<li>State-based digital uplift grants (availability varies)</li>
 </ul>
 
 <div class="footer">
@@ -175,21 +85,38 @@ provider aligned with the scope and complexity of the identified risks.
 <script>
 document.getElementById("domain").textContent =
   sessionStorage.getItem("scanDomain") || "—";
-
-document.getElementById("time").textContent =
-  new Date().toLocaleString();
-
+document.getElementById("time").textContent = new Date().toLocaleString();
 document.getElementById("summary").textContent =
   sessionStorage.getItem("scanSummary") || "—";
 
-const indicators =
-  JSON.parse(sessionStorage.getItem("scanIndicators") || "[]");
+(JSON.parse(sessionStorage.getItem("scanIndicators")||"[]"))
+  .forEach(i=>{
+    indicatorTable.innerHTML+=`<tr><td>${i.label}</td><td>${i.status}</td></tr>`;
+  });
 
-const table = document.getElementById("indicatorTable");
-indicators.forEach(i=>{
-  table.innerHTML +=
-    `<tr><td>${i.label}</td><td>${i.status}</td></tr>`;
-});
+const edge = sessionStorage.getItem("edgePosture");
+edgeSection.innerHTML =
+  edge==="EDGE_DETECTED" ?
+  `<p>An edge protection platform was observed. Presence does not confirm optimisation; automated analysis is required to validate posture.</p>` :
+  edge==="EDGE_PARTIAL" ?
+  `<p>Mixed edge and origin behaviour was observed, indicating inconsistent application of protection layers.</p>` :
+  `<p>No external edge protection was observed; origin services appear directly accessible.</p>`;
+
+const geo = sessionStorage.getItem("geoOrientation");
+geoSection.innerHTML =
+  geo==="GLOBAL_ORIENTED" ?
+  `<p>The site appears intentionally global; security depends on adaptive controls rather than geographic restriction.</p>` :
+  geo==="LOCAL_ONLY" ?
+  `<p>The site appears locally focused; global exposure may exceed operational requirements.</p>` :
+  `<p>The site shows mixed local and global characteristics.</p>`;
+
+const tls = sessionStorage.getItem("tlsPosture");
+tlsSection.innerHTML =
+  tls==="MODERN_TLS" ?
+  `<p>Modern TLS protocols and certificate posture were observed.</p>` :
+  tls==="COMPATIBILITY_TLS" ?
+  `<p>Compatibility-focused transport encryption was observed.</p>` :
+  `<p>Transport security indicators suggest aging protocol or certificate posture.</p>`;
 </script>
 
 </body>
