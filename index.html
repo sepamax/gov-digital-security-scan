@@ -41,6 +41,7 @@ button{
 button.refresh{background:#1f2937}
 button.secondary{background:#1f2937;margin-top:10px}
 button.hidden{display:none}
+
 pre{
   background:#0b0e14;
   padding:18px;
@@ -50,6 +51,7 @@ pre{
   color:#cbd5f5;
   min-height:120px
 }
+
 .grid{
   display:grid;
   grid-template-columns:1fr 1fr;
@@ -81,13 +83,6 @@ pre{
   animation:fadeIn .4s forwards
 }
 .matrix-row:last-child{border-bottom:none}
-.matrix-row:nth-child(2){animation-delay:.05s}
-.matrix-row:nth-child(3){animation-delay:.1s}
-.matrix-row:nth-child(4){animation-delay:.15s}
-.matrix-row:nth-child(5){animation-delay:.2s}
-.matrix-row:nth-child(6){animation-delay:.25s}
-.matrix-row:nth-child(7){animation-delay:.3s}
-.matrix-row:nth-child(8){animation-delay:.35s}
 
 .pill{
   font-size:12px;
@@ -114,6 +109,20 @@ pre{
   50%{content:".."}
   75%{content:"..."}
   100%{content:""}
+}
+
+/* CTA glow */
+.cta-hint{
+  margin-left:14px;
+  font-size:13px;
+  color:#93c5fd;
+  opacity:.9;
+  animation:pulse 3s ease-in-out infinite;
+}
+@keyframes pulse{
+  0%{opacity:.6}
+  50%{opacity:1}
+  100%{opacity:.6}
 }
 
 /* PDF modal */
@@ -177,6 +186,8 @@ pre{
 </div>
 
 <button id="genPdfBtn" class="secondary hidden" onclick="generatePDF()">Generate advisory report</button>
+<span id="ctaHint" class="cta-hint hidden">✦ Find out more by generating the advisory report</span>
+
 <button id="dlPdfBtn" class="secondary hidden" onclick="downloadPDF()">Download PDF</button>
 </div>
 
@@ -197,15 +208,43 @@ let pdfBlobUrl=null;
 const LOGO_SRC =
 "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/l4W2WAAAAABJRU5ErkJggg==";
 
-/* CANONICAL SCAN DATA */
+/* CANONICAL INDICATORS + CONTEXT */
 const indicators = [
-  {label:"HTTPS Transport",status:"STRONG"},
-  {label:"HSTS",status:"MISSING"},
-  {label:"Content Security Policy",status:"MISSING"},
-  {label:"Clickjacking Protection",status:"WEAK"},
-  {label:"MIME Sniffing Protection",status:"MISSING"},
-  {label:"Referrer Policy",status:"MISSING"},
-  {label:"Permissions Policy",status:"MISSING"}
+  {
+    label:"HTTPS Transport",
+    status:"STRONG",
+    context:"Secure transport is in place, reducing the likelihood of data interception during normal use. This provides a solid baseline for other security controls."
+  },
+  {
+    label:"HSTS",
+    status:"MISSING",
+    context:"Without enforced HTTPS usage, browsers may still attempt insecure connections under certain conditions. Over time, this can weaken transport protections."
+  },
+  {
+    label:"Content Security Policy",
+    status:"MISSING",
+    context:"In the absence of explicit content restrictions, browsers rely on default behaviour when loading resources. As applications evolve, this can increase unintended execution paths."
+  },
+  {
+    label:"Clickjacking Protection",
+    status:"WEAK",
+    context:"Partial framing controls are present but may not cover all embedding scenarios. This can allow interface elements to be displayed in unintended contexts."
+  },
+  {
+    label:"MIME Sniffing Protection",
+    status:"MISSING",
+    context:"Without explicit content-type enforcement, browsers may attempt to infer file types, introducing ambiguity in how content is interpreted."
+  },
+  {
+    label:"Referrer Policy",
+    status:"MISSING",
+    context:"Referrer information may be shared more broadly than necessary during navigation, potentially exposing contextual request data."
+  },
+  {
+    label:"Permissions Policy",
+    status:"MISSING",
+    context:"Browser features are not explicitly scoped. As new APIs become available, this can result in broader access than originally intended."
+  }
 ];
 
 function runScan(){
@@ -213,21 +252,21 @@ function runScan(){
   document.getElementById("statusMatrix").classList.remove("hidden");
 
   document.getElementById("plainResults").textContent =
-`• HTTPS transport is present and functioning.
-• Several modern security headers are missing or partially implemented.
+`• Secure transport is present.
+• Several security controls are missing or partially implemented.
 • No indicators of active compromise are visible at surface level.
 
 Overall surface posture: MODERATE
 
 Interpretation:
 • Findings reflect configuration signals only.
-• Absence or weakness does not confirm exploitability.
-• Indicators do not confirm tracking, breach, or misuse.`;
+• They do not confirm compromise, tracking, or misuse.`;
 
   document.getElementById("techResults").textContent =
-indicators.map(i=>`${i.status} – ${i.label}`).join("\n");
+    indicators.map(i=>`${i.status} – ${i.label}`).join("\n");
 
   document.getElementById("genPdfBtn").classList.remove("hidden");
+  document.getElementById("ctaHint").classList.remove("hidden");
 
   const btn=document.getElementById("scanBtn");
   btn.textContent="⟳ Refresh for next scan";
@@ -252,6 +291,7 @@ function resetScan(){
   document.getElementById("techResults").innerHTML="Awaiting input<span class='dots'></span>";
   document.getElementById("genPdfBtn").classList.add("hidden");
   document.getElementById("dlPdfBtn").classList.add("hidden");
+  document.getElementById("ctaHint").classList.add("hidden");
   if(pdfBlobUrl){URL.revokeObjectURL(pdfBlobUrl);pdfBlobUrl=null}
   const btn=document.getElementById("scanBtn");
   btn.textContent="Run AI surface scan";
@@ -266,11 +306,13 @@ function drawBlock(doc,text,x,y,lineHeight,maxWidth){
 
 function generatePDF(){
   const doc=new window.jspdf.jsPDF();
+
   doc.addImage(LOGO_SRC,"PNG",14,12,18,18);
   doc.setFontSize(14);
   doc.text("Urban Sentinel",38,20);
   doc.setFontSize(11);
   doc.text("AI-Assisted Website Security Surface Scan",38,27);
+
   doc.setFontSize(9);
   doc.text(`Domain: ${document.getElementById("domain").value||"example.com"}`,14,40);
   doc.text(`Generated: ${new Date().toLocaleString()}`,14,45);
@@ -287,9 +329,15 @@ function generatePDF(){
 
   doc.addPage();
   doc.setFontSize(11);
-  doc.text("Summary for Decision-Makers",14,20);
+  doc.text("Contextual Interpretation of Findings",14,20);
   doc.setFontSize(9);
-  drawBlock(doc,document.getElementById("plainResults").textContent,14,26,6.5,180);
+  indicators.forEach((i,idx)=>{
+    drawBlock(
+      doc,
+      `${i.label} — ${i.context}`,
+      14,26 + (idx*18),6.5,180
+    );
+  });
 
   const blob=doc.output("blob");
   if(pdfBlobUrl)URL.revokeObjectURL(pdfBlobUrl);
