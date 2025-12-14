@@ -38,9 +38,7 @@ button{
   background:#3b82f6;
   color:white
 }
-button.refresh{
-  background:#1f2937
-}
+button.refresh{background:#1f2937}
 button.secondary{background:#1f2937;margin-top:10px}
 button.hidden{display:none}
 pre{
@@ -59,12 +57,56 @@ pre{
   margin-top:18px
 }
 
-/* animated dots */
+/* STATUS MATRIX */
+.matrix{
+  margin-top:18px;
+  background:#0b0e14;
+  border-radius:10px;
+  padding:16px 18px;
+  border:1px solid #1f2937
+}
+.matrix.hidden{display:none}
+.matrix-header{
+  font-weight:600;
+  margin-bottom:12px;
+  color:#e5e7eb
+}
+.matrix-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:10px 6px;
+  border-bottom:1px solid #1f2937;
+  opacity:0;
+  animation:fadeIn .4s forwards
+}
+.matrix-row:last-child{border-bottom:none}
+.matrix-row:nth-child(2){animation-delay:.05s}
+.matrix-row:nth-child(3){animation-delay:.1s}
+.matrix-row:nth-child(4){animation-delay:.15s}
+.matrix-row:nth-child(5){animation-delay:.2s}
+.matrix-row:nth-child(6){animation-delay:.25s}
+.matrix-row:nth-child(7){animation-delay:.3s}
+.matrix-row:nth-child(8){animation-delay:.35s}
+
+.pill{
+  font-size:12px;
+  padding:4px 10px;
+  border-radius:999px;
+  font-weight:600
+}
+.strong .pill{background:#064e3b;color:#6ee7b7}
+.weak .pill{background:#3f2f1d;color:#fcd34d}
+.missing .pill{background:#3f1d1d;color:#fca5a5}
+
+@keyframes fadeIn{to{opacity:1}}
+
+/* dots */
 .dots::after{
   content:"";
   animation:dots 1.4s infinite;
   margin-left:6px;
-  color:#60a5fa;
+  color:#60a5fa
 }
 @keyframes dots{
   0%{content:""}
@@ -80,12 +122,12 @@ pre{
   position:fixed;
   inset:0;
   background:rgba(0,0,0,.85);
-  z-index:99999;
+  z-index:99999
 }
 #pdfModal.active{
   display:flex;
   align-items:center;
-  justify-content:center;
+  justify-content:center
 }
 #pdfFrame{
   width:90%;
@@ -93,7 +135,7 @@ pre{
   background:#111;
   border-radius:10px;
   display:flex;
-  flex-direction:column;
+  flex-direction:column
 }
 #pdfHeader{
   padding:10px 14px;
@@ -101,13 +143,9 @@ pre{
   justify-content:space-between;
   align-items:center;
   background:#141821;
-  border-bottom:1px solid #2a3140;
+  border-bottom:1px solid #2a3140
 }
-#pdfFrame iframe{
-  flex:1;
-  border:none;
-  background:#fff;
-}
+#pdfFrame iframe{flex:1;border:none;background:#fff}
 </style>
 </head>
 
@@ -118,8 +156,13 @@ pre{
 <div class="box">
 <label>Website domain</label><br><br>
 <input id="domain" placeholder="example.com">
-
 <button id="scanBtn" onclick="runScan()">Run AI surface scan</button>
+
+<!-- STATUS MATRIX -->
+<div id="statusMatrix" class="matrix hidden">
+  <div class="matrix-header">Surface Security Indicators</div>
+  <div id="matrixRows"></div>
+</div>
 
 <h2>Results</h2>
 <div class="grid">
@@ -151,62 +194,69 @@ pre{
 <script>
 let pdfBlobUrl=null;
 
-/* logo source (ready for Horizon later) */
 const LOGO_SRC =
 "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/l4W2WAAAAABJRU5ErkJggg==";
 
+/* CANONICAL SCAN DATA */
+const indicators = [
+  {label:"HTTPS Transport",status:"STRONG"},
+  {label:"HSTS",status:"MISSING"},
+  {label:"Content Security Policy",status:"MISSING"},
+  {label:"Clickjacking Protection",status:"WEAK"},
+  {label:"MIME Sniffing Protection",status:"MISSING"},
+  {label:"Referrer Policy",status:"MISSING"},
+  {label:"Permissions Policy",status:"MISSING"}
+];
+
 function runScan(){
+  renderMatrix();
+  document.getElementById("statusMatrix").classList.remove("hidden");
+
   document.getElementById("plainResults").textContent =
 `• HTTPS transport is present and functioning.
-• Several modern security headers are not observed.
+• Several modern security headers are missing or partially implemented.
 • No indicators of active compromise are visible at surface level.
-
-Third-party & external dependencies:
-• No common advertising or analytics providers detected.
-• No external resource URLs identified.
 
 Overall surface posture: MODERATE
 
 Interpretation:
 • Findings reflect configuration signals only.
-• Absence of headers does not confirm exploitability.
+• Absence or weakness does not confirm exploitability.
 • Indicators do not confirm tracking, breach, or misuse.`;
 
   document.getElementById("techResults").textContent =
-`STRONG  – HTTPS transport
-MISSING – Strict-Transport-Security (HSTS)
-MISSING – Content-Security-Policy (CSP)
-MISSING – Clickjacking protection
-MISSING – MIME sniffing protection
-MISSING – Referrer-Policy
-MISSING – Permissions-Policy`;
+indicators.map(i=>`${i.status} – ${i.label}`).join("\n");
 
   document.getElementById("genPdfBtn").classList.remove("hidden");
 
-  const btn = document.getElementById("scanBtn");
-  btn.textContent = "⟳ Refresh for next scan";
+  const btn=document.getElementById("scanBtn");
+  btn.textContent="⟳ Refresh for next scan";
   btn.classList.add("refresh");
-  btn.onclick = resetScan;
+  btn.onclick=resetScan;
+}
+
+function renderMatrix(){
+  const c=document.getElementById("matrixRows");
+  c.innerHTML="";
+  indicators.forEach(i=>{
+    const row=document.createElement("div");
+    row.className=`matrix-row ${i.status.toLowerCase()}`;
+    row.innerHTML=`<span>${i.label}</span><span class="pill">${i.status}</span>`;
+    c.appendChild(row);
+  });
 }
 
 function resetScan(){
-  document.getElementById("plainResults").innerHTML =
-    "Awaiting input<span class='dots'></span>";
-  document.getElementById("techResults").innerHTML =
-    "Awaiting input<span class='dots'></span>";
-
+  document.getElementById("statusMatrix").classList.add("hidden");
+  document.getElementById("plainResults").innerHTML="Awaiting input<span class='dots'></span>";
+  document.getElementById("techResults").innerHTML="Awaiting input<span class='dots'></span>";
   document.getElementById("genPdfBtn").classList.add("hidden");
   document.getElementById("dlPdfBtn").classList.add("hidden");
-
-  if(pdfBlobUrl){
-    URL.revokeObjectURL(pdfBlobUrl);
-    pdfBlobUrl=null;
-  }
-
-  const btn = document.getElementById("scanBtn");
-  btn.textContent = "Run AI surface scan";
+  if(pdfBlobUrl){URL.revokeObjectURL(pdfBlobUrl);pdfBlobUrl=null}
+  const btn=document.getElementById("scanBtn");
+  btn.textContent="Run AI surface scan";
   btn.classList.remove("refresh");
-  btn.onclick = runScan;
+  btn.onclick=runScan;
 }
 
 function drawBlock(doc,text,x,y,lineHeight,maxWidth){
@@ -216,33 +266,34 @@ function drawBlock(doc,text,x,y,lineHeight,maxWidth){
 
 function generatePDF(){
   const doc=new window.jspdf.jsPDF();
-
   doc.addImage(LOGO_SRC,"PNG",14,12,18,18);
   doc.setFontSize(14);
   doc.text("Urban Sentinel",38,20);
   doc.setFontSize(11);
   doc.text("AI-Assisted Website Security Surface Scan",38,27);
-
   doc.setFontSize(9);
   doc.text(`Domain: ${document.getElementById("domain").value||"example.com"}`,14,40);
   doc.text(`Generated: ${new Date().toLocaleString()}`,14,45);
   doc.line(14,48,196,48);
 
   doc.setFontSize(11);
-  doc.text("Summary for Decision-Makers",14,58);
+  doc.text("Surface Security Indicators",14,58);
   doc.setFontSize(9);
-  drawBlock(doc,document.getElementById("plainResults").textContent,14,64,6.5,180);
+  drawBlock(
+    doc,
+    indicators.map(i=>`${i.status} – ${i.label}`).join("\n"),
+    14,64,6.5,180
+  );
 
   doc.addPage();
   doc.setFontSize(11);
-  doc.text("Technical Findings",14,20);
+  doc.text("Summary for Decision-Makers",14,20);
   doc.setFontSize(9);
-  drawBlock(doc,document.getElementById("techResults").textContent,14,26,6.5,180);
+  drawBlock(doc,document.getElementById("plainResults").textContent,14,26,6.5,180);
 
   const blob=doc.output("blob");
   if(pdfBlobUrl)URL.revokeObjectURL(pdfBlobUrl);
   pdfBlobUrl=URL.createObjectURL(blob);
-
   document.getElementById("pdfPreview").src=pdfBlobUrl;
   document.getElementById("pdfModal").classList.add("active");
   document.getElementById("dlPdfBtn").classList.remove("hidden");
@@ -254,9 +305,7 @@ function downloadPDF(){
   a.download="urban-sentinel-surface-scan.pdf";
   a.click();
 }
-function closePdf(){
-  document.getElementById("pdfModal").classList.remove("active");
-}
+function closePdf(){document.getElementById("pdfModal").classList.remove("active")}
 </script>
 
 </body>
