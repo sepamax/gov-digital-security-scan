@@ -38,6 +38,9 @@ button{
   background:#3b82f6;
   color:white
 }
+button.refresh{
+  background:#1f2937
+}
 button.secondary{background:#1f2937;margin-top:10px}
 button.hidden{display:none}
 pre{
@@ -115,8 +118,8 @@ pre{
 <div class="box">
 <label>Website domain</label><br><br>
 <input id="domain" placeholder="example.com">
-<button onclick="runScan()">Run AI surface scan</button>
-<button id="resetBtn" class="secondary hidden" onclick="resetScan()">⟳ Refresh for next scan</button>
+
+<button id="scanBtn" onclick="runScan()">Run AI surface scan</button>
 
 <h2>Results</h2>
 <div class="grid">
@@ -146,14 +149,9 @@ pre{
 </div>
 
 <script>
-let pdfBlobUrl = null;
+let pdfBlobUrl=null;
 
-/*
-  LOGO SOURCE
-  Replace this later with:
-  - base64
-  - or hosted PNG (Hostinger / Horizon)
-*/
+/* logo source (ready for Horizon later) */
 const LOGO_SRC =
 "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/l4W2WAAAAABJRU5ErkJggg==";
 
@@ -184,7 +182,11 @@ MISSING – Referrer-Policy
 MISSING – Permissions-Policy`;
 
   document.getElementById("genPdfBtn").classList.remove("hidden");
-  document.getElementById("resetBtn").classList.remove("hidden");
+
+  const btn = document.getElementById("scanBtn");
+  btn.textContent = "⟳ Refresh for next scan";
+  btn.classList.add("refresh");
+  btn.onclick = resetScan;
 }
 
 function resetScan(){
@@ -195,32 +197,34 @@ function resetScan(){
 
   document.getElementById("genPdfBtn").classList.add("hidden");
   document.getElementById("dlPdfBtn").classList.add("hidden");
-  document.getElementById("resetBtn").classList.add("hidden");
 
   if(pdfBlobUrl){
     URL.revokeObjectURL(pdfBlobUrl);
-    pdfBlobUrl = null;
+    pdfBlobUrl=null;
   }
+
+  const btn = document.getElementById("scanBtn");
+  btn.textContent = "Run AI surface scan";
+  btn.classList.remove("refresh");
+  btn.onclick = runScan;
 }
 
 function drawBlock(doc,text,x,y,lineHeight,maxWidth){
-  const lines = doc.splitTextToSize(text,maxWidth);
+  const lines=doc.splitTextToSize(text,maxWidth);
   lines.forEach((l,i)=>doc.text(l,x,y+(i*lineHeight)));
 }
 
 function generatePDF(){
-  const doc = new window.jspdf.jsPDF();
+  const doc=new window.jspdf.jsPDF();
 
-  /* logo */
   doc.addImage(LOGO_SRC,"PNG",14,12,18,18);
-
   doc.setFontSize(14);
   doc.text("Urban Sentinel",38,20);
   doc.setFontSize(11);
   doc.text("AI-Assisted Website Security Surface Scan",38,27);
 
   doc.setFontSize(9);
-  doc.text(`Domain: ${document.getElementById("domain").value || "example.com"}`,14,40);
+  doc.text(`Domain: ${document.getElementById("domain").value||"example.com"}`,14,40);
   doc.text(`Generated: ${new Date().toLocaleString()}`,14,45);
   doc.line(14,48,196,48);
 
@@ -235,11 +239,11 @@ function generatePDF(){
   doc.setFontSize(9);
   drawBlock(doc,document.getElementById("techResults").textContent,14,26,6.5,180);
 
-  const blob = doc.output("blob");
-  if(pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
-  pdfBlobUrl = URL.createObjectURL(blob);
+  const blob=doc.output("blob");
+  if(pdfBlobUrl)URL.revokeObjectURL(pdfBlobUrl);
+  pdfBlobUrl=URL.createObjectURL(blob);
 
-  document.getElementById("pdfPreview").src = pdfBlobUrl;
+  document.getElementById("pdfPreview").src=pdfBlobUrl;
   document.getElementById("pdfModal").classList.add("active");
   document.getElementById("dlPdfBtn").classList.remove("hidden");
 }
@@ -250,7 +254,6 @@ function downloadPDF(){
   a.download="urban-sentinel-surface-scan.pdf";
   a.click();
 }
-
 function closePdf(){
   document.getElementById("pdfModal").classList.remove("active");
 }
