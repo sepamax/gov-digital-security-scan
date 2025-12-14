@@ -23,6 +23,8 @@ pre{background:#0b0e14;padding:18px;border-radius:8px;white-space:pre-wrap;line-
 .strong{background:#064e3b;color:#6ee7b7}
 .weak{background:#3f2f1d;color:#fcd34d}
 .missing{background:#3f1d1d;color:#fca5a5}
+.dots::after{content:"";display:inline-block;width:1em;animation:ellipsis 1.4s infinite;opacity:.7}
+@keyframes ellipsis{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}100%{content:""}}
 </style>
 </head>
 
@@ -43,7 +45,7 @@ pre{background:#0b0e14;padding:18px;border-radius:8px;white-space:pre-wrap;line-
 <button
   id="scanBtn"
   disabled
-  onclick="runScan()"
+  onclick="handleScan()"
 >
 Run AI surface scan
 </button>
@@ -57,11 +59,11 @@ Run AI surface scan
 <div class="grid">
   <div>
     <h3>Summary for Decision-Makers</h3>
-    <pre id="plainResults">Awaiting input…</pre>
+    <pre id="plainResults">Awaiting input<span class="dots"></span></pre>
   </div>
   <div>
     <h3>Technical Findings</h3>
-    <pre id="techResults">Awaiting input…</pre>
+    <pre id="techResults">Awaiting input<span class="dots"></span></pre>
   </div>
 </div>
 
@@ -76,7 +78,13 @@ Generate advisory report
 
 <script>
 /* =========================
-   CONFIG / STATIC DATA
+   STATE
+========================= */
+
+let scanCompleted = false;
+
+/* =========================
+   STATIC DATA
 ========================= */
 
 const indicators=[
@@ -98,6 +106,8 @@ function isValidDomain(value){
 }
 
 function checkDomain(){
+  if(scanCompleted) return;
+
   const input=document.getElementById("domain");
   const btn=document.getElementById("scanBtn");
   const valid=isValidDomain(input.value.trim());
@@ -107,22 +117,34 @@ function checkDomain(){
 }
 
 /* =========================
-   HARD-GATED SCAN LOGIC
+   BUTTON HANDLER
+========================= */
+
+function handleScan(){
+  if(!scanCompleted){
+    runScan();
+  }else{
+    resetScan();
+  }
+}
+
+/* =========================
+   SCAN LOGIC
 ========================= */
 
 function runScan(){
   const input=document.getElementById("domain");
   const domain=input.value.trim();
 
-  // 🔒 HARD STOP — cannot be bypassed
   if(!isValidDomain(domain)){
     alert("Please enter a valid website domain before running the scan.");
     input.focus();
     return;
   }
 
-  renderMatrix();
+  scanCompleted = true;
 
+  renderMatrix();
   document.getElementById("statusMatrix").classList.remove("hidden");
 
   document.getElementById("plainResults").textContent=
@@ -135,7 +157,6 @@ Overall surface posture: MODERATE`;
   document.getElementById("techResults").textContent=
     indicators.map(i=>`${i.status} – ${i.label}`).join("\n");
 
-  // Persist for report preview
   sessionStorage.setItem("scanDomain",domain);
   sessionStorage.setItem("scanIndicators",JSON.stringify(indicators));
   sessionStorage.setItem(
@@ -143,11 +164,40 @@ Overall surface posture: MODERATE`;
     document.getElementById("plainResults").textContent
   );
 
+  const btn=document.getElementById("scanBtn");
+  btn.textContent="Refresh scan";
+  btn.disabled=false;
+  btn.classList.add("enabled");
+
   document.getElementById("genReportBtn").classList.remove("hidden");
 }
 
 /* =========================
-   UI HELPERS
+   RESET LOGIC
+========================= */
+
+function resetScan(){
+  scanCompleted = false;
+
+  document.getElementById("domain").value="";
+  document.getElementById("statusMatrix").classList.add("hidden");
+  document.getElementById("genReportBtn").classList.add("hidden");
+
+  document.getElementById("plainResults").innerHTML=
+    "Awaiting input<span class='dots'></span>";
+  document.getElementById("techResults").innerHTML=
+    "Awaiting input<span class='dots'></span>";
+
+  const btn=document.getElementById("scanBtn");
+  btn.textContent="Run AI surface scan";
+  btn.disabled=true;
+  btn.classList.remove("enabled");
+
+  sessionStorage.clear();
+}
+
+/* =========================
+   HELPERS
 ========================= */
 
 function renderMatrix(){
@@ -164,7 +214,7 @@ function renderMatrix(){
 }
 
 function openReport(){
-  window.open("report.html","_blank");
+  window.location.href="report.html";
 }
 </script>
 
