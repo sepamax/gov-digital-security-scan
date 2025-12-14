@@ -35,20 +35,8 @@ pre{background:#0b0e14;padding:18px;border-radius:8px;white-space:pre-wrap;line-
 <div class="box">
 <label>Website domain</label><br><br>
 
-<input
-  id="domain"
-  placeholder="e.g. yoursite.com"
-  autocomplete="off"
-  oninput="checkDomain()"
-/>
-
-<button
-  id="scanBtn"
-  disabled
-  onclick="handleScan()"
->
-Run AI surface scan
-</button>
+<input id="domain" placeholder="e.g. yoursite.com" oninput="checkDomain()">
+<button id="scanBtn" disabled onclick="handleScan()">Run AI surface scan</button>
 
 <div id="statusMatrix" class="matrix hidden">
   <strong>Surface Security Indicators</strong>
@@ -67,6 +55,7 @@ Run AI surface scan
   </div>
 </div>
 
+<!-- GENERATE REPORT CTA -->
 <button
   id="genReportBtn"
   class="secondary hidden"
@@ -75,35 +64,24 @@ Run AI surface scan
 Generate advisory report
 </button>
 
-<p style="margin-top:12px;font-size:14px;color:#9ca3af;max-width:750px">
-This advisory report consolidates your scan results into a
-<strong>plain-English risk explanation</strong>, technical indicators,
-independent legal disclosures, and grant-ready supporting language
-suitable for internal review, procurement decisions, or government
-funding applications.
+<p id="reportHelper" class="hidden" style="margin-top:10px;font-size:14px;color:#9ca3af;max-width:700px">
+Generate a full advisory report including risk explanation, grant-ready
+supporting language, and a printable PDF summary for internal or
+government review.
 </p>
 </div>
 
-<!-- REPORT PREVIEW PANEL -->
-<div id="reportPreview" class="box hidden" style="margin-top:30px">
+<!-- REPORT PREVIEW (HIDDEN UNTIL CLICK) -->
+<div id="reportPreview" class="box hidden">
   <h2>Advisory Report Preview</h2>
   <iframe
     id="reportFrame"
-    src=""
-    style="width:100%;height:900px;border:1px solid #1f2937;border-radius:8px;background:#fff"
+    style="width:100%;height:700px;border:1px solid #1f2937;border-radius:8px;background:#fff"
   ></iframe>
 </div>
 
 <script>
-/* =========================
-   STATE (LOCKED)
-========================= */
-
-let scanCompleted = false;
-
-/* =========================
-   STATIC DATA (PLACEHOLDER)
-========================= */
+let scanCompleted=false;
 
 const indicators=[
   {label:"HTTPS Transport",status:"STRONG"},
@@ -115,51 +93,28 @@ const indicators=[
   {label:"Permissions Policy",status:"MISSING"}
 ];
 
-/* =========================
-   DOMAIN VALIDATION
-========================= */
-
-function isValidDomain(value){
-  return /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(value);
+function isValidDomain(v){
+  return /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(v);
 }
 
 function checkDomain(){
   if(scanCompleted) return;
-  const input=document.getElementById("domain");
+  const v=document.getElementById("domain").value.trim();
   const btn=document.getElementById("scanBtn");
-  const valid=isValidDomain(input.value.trim());
-  btn.disabled=!valid;
-  btn.classList.toggle("enabled",valid);
+  btn.disabled=!isValidDomain(v);
+  btn.classList.toggle("enabled",!btn.disabled);
 }
-
-/* =========================
-   BUTTON HANDLER
-========================= */
 
 function handleScan(){
-  if(!scanCompleted){
-    runScan();
-  }else{
-    resetScan();
-  }
+  if(!scanCompleted) runScan();
+  else resetScan();
 }
 
-/* =========================
-   SCAN LOGIC (LOCKED)
-========================= */
-
 function runScan(){
-  const input=document.getElementById("domain");
-  const domain=input.value.trim();
+  const domain=document.getElementById("domain").value.trim();
+  if(!isValidDomain(domain)) return;
 
-  if(!isValidDomain(domain)){
-    alert("Please enter a valid website domain before running the scan.");
-    input.focus();
-    return;
-  }
-
-  scanCompleted = true;
-
+  scanCompleted=true;
   renderMatrix();
   document.getElementById("statusMatrix").classList.remove("hidden");
 
@@ -175,10 +130,7 @@ Overall surface posture: MODERATE`;
 
   sessionStorage.setItem("scanDomain",domain);
   sessionStorage.setItem("scanIndicators",JSON.stringify(indicators));
-  sessionStorage.setItem(
-    "scanSummary",
-    document.getElementById("plainResults").textContent
-  );
+  sessionStorage.setItem("scanSummary",document.getElementById("plainResults").textContent);
 
   const btn=document.getElementById("scanBtn");
   btn.textContent="Refresh scan";
@@ -186,23 +138,19 @@ Overall surface posture: MODERATE`;
   btn.classList.add("enabled");
 
   document.getElementById("genReportBtn").classList.remove("hidden");
+  document.getElementById("reportHelper").classList.remove("hidden");
 }
 
-/* =========================
-   RESET LOGIC (LOCKED)
-========================= */
-
 function resetScan(){
-  scanCompleted = false;
+  scanCompleted=false;
   document.getElementById("domain").value="";
   document.getElementById("statusMatrix").classList.add("hidden");
   document.getElementById("genReportBtn").classList.add("hidden");
+  document.getElementById("reportHelper").classList.add("hidden");
   document.getElementById("reportPreview").classList.add("hidden");
 
-  document.getElementById("plainResults").innerHTML=
-    "Awaiting input<span class='dots'></span>";
-  document.getElementById("techResults").innerHTML=
-    "Awaiting input<span class='dots'></span>";
+  document.getElementById("plainResults").innerHTML="Awaiting input<span class='dots'></span>";
+  document.getElementById("techResults").innerHTML="Awaiting input<span class='dots'></span>";
 
   const btn=document.getElementById("scanBtn");
   btn.textContent="Run AI surface scan";
@@ -212,27 +160,21 @@ function resetScan(){
   sessionStorage.clear();
 }
 
-/* =========================
-   HELPERS
-========================= */
-
 function renderMatrix(){
   const c=document.getElementById("matrixRows");
   c.innerHTML="";
   indicators.forEach(i=>{
     const r=document.createElement("div");
     r.className="matrix-row";
-    r.innerHTML=
-      `<span>${i.label}</span>
-       <span class="pill ${i.status.toLowerCase()}">${i.status}</span>`;
+    r.innerHTML=`<span>${i.label}</span><span class="pill ${i.status.toLowerCase()}">${i.status}</span>`;
     c.appendChild(r);
   });
 }
 
 function openReportPreview(){
-  const frame=document.getElementById("reportFrame");
-  frame.src="report.html";
+  document.getElementById("reportFrame").src="report.html";
   document.getElementById("reportPreview").classList.remove("hidden");
+  document.getElementById("reportPreview").scrollIntoView({behavior:"smooth"});
 }
 </script>
 
