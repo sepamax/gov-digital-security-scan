@@ -4,41 +4,27 @@
 <meta charset="UTF-8">
 <title>AI-Assisted Website Security Surface Scan</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <style>
 body{font-family:system-ui;padding:40px;max-width:900px;margin:auto;color:#111}
-header{display:flex;gap:20px;align-items:center;border-bottom:2px solid #e5e7eb;padding-bottom:16px}
-header img{height:48px}
-h1{margin:0;font-size:26px}
+h1{margin-top:0}
 h2{margin-top:36px}
-.meta{color:#444;margin-top:8px}
 table{width:100%;border-collapse:collapse;margin-top:16px}
 td,th{border-bottom:1px solid #ddd;padding:8px;text-align:left}
-.status-STRONG{color:#065f46;font-weight:600}
-.status-WEAK{color:#92400e;font-weight:600}
-.status-MISSING{color:#991b1b;font-weight:600}
 .footer{margin-top:40px;font-size:12px;color:#555}
-button{margin-top:30px;padding:10px 16px;font-size:14px}
+button{margin-top:30px}
 @media print{button{display:none}}
 </style>
 </head>
 
 <body>
 
-<header>
-  <img src="urban-sentinel-logo.png" alt="Urban Sentinel logo">
-  <div>
-    <h1>AI-Assisted Website Security Surface Scan</h1>
-    <div class="meta">Urban Sentinel · Automated Surface Assessment</div>
-  </div>
-</header>
-
-<p class="meta"><strong>Domain:</strong> <span id="domain"></span></p>
-<p class="meta"><strong>Generated:</strong> <span id="time"></span></p>
+<h1>AI-Assisted Website Security Surface Scan</h1>
+<p><strong>Domain:</strong> <span id="domain"></span></p>
+<p><strong>Generated:</strong> <span id="time"></span></p>
 
 <h2>Surface Security Indicators</h2>
 <table id="indicatorTable">
-  <tr><th>Indicator</th><th>Status</th></tr>
+<tr><th>Indicator</th><th>Status</th></tr>
 </table>
 
 <h2>Plain English Summary</h2>
@@ -46,67 +32,35 @@ button{margin-top:30px;padding:10px 16px;font-size:14px}
 
 <h2>Observed Risk Implications</h2>
 <p>
-Where modern security headers or browser enforcement controls are missing
-or weak, common implications may include reduced protection against
-client-side content injection, increased reliance on browser defaults,
-and greater exposure to risks introduced by third-party scripts or
-services.
-</p>
-<p>
-These conditions do not indicate an active security incident.
-However, over time, they may increase the likelihood or impact of future
-issues if left unaddressed.
+Missing or weak browser security controls may reduce protection against
+client-side content injection, increase reliance on default browser
+behaviour, and elevate exposure to third-party script risks over time.
 </p>
 
 <h2>Assessment Integrity & Disclosure</h2>
 <p>
-This report was generated using automated analysis of publicly observable
-website behaviour at the time of assessment.
+This report is based on automated analysis of publicly observable website
+behaviour at the time of assessment. It evaluates surface-level
+configuration indicators only and does not perform penetration testing,
+active exploitation, or vulnerability scanning.
 </p>
 <p>
-The assessment evaluates surface-level configuration indicators only and
-does not perform vulnerability scanning, penetration testing, exploit
-development, authentication bypass attempts, or active probing.
-</p>
-<p>
-Missing or weak indicators do not, on their own, confirm exploitability,
-unauthorised access, data misuse, or breach.
-</p>
-<p>
-Findings are time-specific and may change as website configuration,
-hosting infrastructure, or third-party services are updated.
-</p>
-<p>
-This report is provided for risk awareness and decision-support purposes
-only and does not guarantee security or regulatory compliance.
+Findings do not confirm exploitability, compromise, or breach.
+Results are time-specific and may change as configurations are updated.
 </p>
 
 <h2>Independence & Engagement Disclaimer</h2>
 <p>
-Urban Sentinel does not require, expect, or condition any remediation
-work, consultancy engagement, or service purchase as a result of this
-assessment.
-</p>
-<p>
-Clients remain free to address identified issues internally, through
-existing providers, or via alternative third parties, including where
-government funding or grant support is obtained.
+Urban Sentinel does not require or condition remediation work,
+consultancy engagement, or service purchase as a result of this
+assessment. Clients remain free to engage any provider of their choosing.
 </p>
 
 <h2>Government Grant & Advisory Pathways</h2>
-<p>
-This report may be used as supporting evidence to demonstrate observable
-digital risk or uplift need in applications for cyber resilience or
-digital modernisation programs.
-</p>
-
 <ul>
-  <li><strong>Cyber Wardens Program (Australian Government)</strong><br>
-    https://www.cyberwardens.gov.au</li>
-  <li><strong>ASD / ACSC Small Business Cyber Guidance</strong><br>
-    https://www.cyber.gov.au</li>
-  <li><strong>State-based Small Business Digital Grants</strong><br>
-    Availability varies by jurisdiction and funding round</li>
+<li>Cyber Wardens Program — https://www.cyberwardens.gov.au</li>
+<li>ASD / ACSC Small Business Cyber Guidance — https://www.cyber.gov.au</li>
+<li>State-based small business digital grants (availability varies)</li>
 </ul>
 
 <div class="footer">
@@ -116,25 +70,14 @@ digital modernisation programs.
 <button onclick="window.print()">Print / Save as PDF</button>
 
 <script>
-document.getElementById("domain").textContent =
-  sessionStorage.getItem("scanDomain") || "—";
+document.getElementById("domain").textContent=sessionStorage.getItem("scanDomain")||"—";
+document.getElementById("time").textContent=new Date().toLocaleString();
+document.getElementById("summary").textContent=sessionStorage.getItem("scanSummary")||"—";
 
-document.getElementById("time").textContent =
-  new Date().toLocaleString();
-
-document.getElementById("summary").textContent =
-  sessionStorage.getItem("scanSummary") || "—";
-
-const indicators =
-  JSON.parse(sessionStorage.getItem("scanIndicators") || "[]");
-
+const indicators=JSON.parse(sessionStorage.getItem("scanIndicators")||"[]");
 const table=document.getElementById("indicatorTable");
 indicators.forEach(i=>{
-  const row=document.createElement("tr");
-  row.innerHTML=
-    `<td>${i.label}</td>
-     <td class="status-${i.status}">${i.status}</td>`;
-  table.appendChild(row);
+  table.innerHTML+=`<tr><td>${i.label}</td><td>${i.status}</td></tr>`;
 });
 </script>
 
