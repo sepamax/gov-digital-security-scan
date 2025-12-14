@@ -13,7 +13,6 @@ h1{margin-top:24px}
 h2{margin-top:36px}
 table{width:100%;border-collapse:collapse;margin-top:16px}
 td,th{border-bottom:1px solid #ddd;padding:8px;text-align:left}
-pre{background:#f4f4f5;padding:14px;border-radius:8px;white-space:pre-wrap}
 .footer{margin-top:40px;font-size:12px;color:#555}
 button{margin-top:30px}
 @media print{button{display:none}}
@@ -23,7 +22,7 @@ button{margin-top:30px}
 <body>
 
 <header>
-  <img src="urban-sentinel-logo.png" alt="Urban Sentinel logo">
+  <img src="urban-sentinel-logo.png">
   <div class="header-right">
     Urban Sentinel Pty Ltd<br>
     ABN: 00 000 000 000
@@ -31,7 +30,6 @@ button{margin-top:30px}
 </header>
 
 <h1>AI-Assisted Website Security Surface Scan</h1>
-
 <p><strong>Domain:</strong> <span id="domain"></span></p>
 <p><strong>Generated:</strong> <span id="time"></span></p>
 
@@ -41,7 +39,7 @@ button{margin-top:30px}
 </table>
 
 <h2>Plain English Summary</h2>
-<pre id="summary"></pre>
+<p id="summary"></p>
 
 <h2>Observed Risk Implications</h2>
 <p>
@@ -52,13 +50,13 @@ exposure over time.
 </p>
 
 <h2>Edge Protection & Platform Posture</h2>
-<div id="edgeSection"></div>
+<p id="edge"></p>
 
 <h2>Geographic Exposure & Locality Alignment</h2>
-<div id="geoSection"></div>
+<p id="geo"></p>
 
 <h2>Transport Security & TLS Posture</h2>
-<div id="tlsSection"></div>
+<p id="tls"></p>
 
 <h2>Assessment Integrity & Disclosure</h2>
 <p>
@@ -67,39 +65,31 @@ behaviour at the time of assessment. It evaluates surface-level configuration
 signals only and does not perform penetration testing, vulnerability scanning,
 exploit development, or intrusive probing.
 </p>
+
 <p>
-Findings do not confirm exploitability, unauthorised access, compromise, or
-breach. Results are time-specific and may change as configurations, hosting
-platforms, or third-party services are updated.
+Findings do not confirm exploitability, compromise, or breach. Results are
+time-specific and may change as configurations evolve.
 </p>
 
 <h2>Independence & Engagement Disclaimer</h2>
 <p>
-Urban Sentinel does not require, expect, or condition any remediation work,
-consultancy engagement, or service purchase as a result of this assessment.
-</p>
-<p>
-Clients remain free to engage Urban Sentinel or any other provider of their
-choosing, including where government grant funding or external advisory
-programs are utilised.
+Urban Sentinel does not require or condition remediation work or engagement.
+Clients remain free to choose any provider, including where government grants
+are used.
 </p>
 
 <h2>Professional Recommendation</h2>
 <p>
-The posture characteristics identified in this assessment relate to modern
-browser behaviour, platform configuration, and evolving attack techniques.
-</p>
-<p>
 Urban Sentinel is specifically structured to design, implement, and validate
-AI-assisted security uplift across web platforms. While engagement is not
-mandatory, remediation is strongly recommended to be undertaken by a specialist
-capability aligned with the complexity of the risks observed.
+AI-assisted security uplift across web platforms. Engagement is not mandatory,
+but remediation is strongly recommended to be handled by a specialist capability
+aligned with the risks observed.
 </p>
 
 <h2>Government Grant & Advisory Pathways</h2>
 <ul>
 <li>Cyber Wardens Program — https://www.cyberwardens.gov.au</li>
-<li>ASD / ACSC Small Business Cyber Guidance — https://www.cyber.gov.au</li>
+<li>ASD / ACSC Guidance — https://www.cyber.gov.au</li>
 <li>State-based digital uplift grants (availability varies)</li>
 </ul>
 
@@ -110,46 +100,45 @@ capability aligned with the complexity of the risks observed.
 <button onclick="window.print()">Print / Save as PDF</button>
 
 <script>
-document.getElementById("domain").textContent =
-  sessionStorage.getItem("scanDomain") || "—";
-document.getElementById("time").textContent = new Date().toLocaleString();
-document.getElementById("summary").textContent =
-  sessionStorage.getItem("scanSummary") || "—";
+domain.textContent=sessionStorage.getItem("scanDomain")||"—";
+time.textContent=new Date().toLocaleString();
+summary.textContent=sessionStorage.getItem("scanSummary")||"—";
 
-const indicators = JSON.parse(sessionStorage.getItem("scanIndicators") || "[]");
+const indicators=JSON.parse(sessionStorage.getItem("scanIndicators")||"[]");
+indicators.push(
+  {label:"Edge / CDN Protection",status:sessionStorage.getItem("edgePosture")},
+  {label:"Geographic Exposure",status:sessionStorage.getItem("geoOrientation")},
+  {label:"Transport Security",status:sessionStorage.getItem("tlsPosture")}
+);
+
+function color(s){
+  s=s.toUpperCase();
+  if(s.includes("STRONG")||s.includes("MODERN")) return "#16a34a";
+  if(s.includes("WEAK")||s.includes("AGING")) return "#f59e0b";
+  if(s.includes("MISSING")||s.includes("NOT")) return "#dc2626";
+  if(s.includes("MIXED")) return "#eab308";
+  return "#6b7280";
+}
+
 indicators.forEach(i=>{
-  indicatorTable.innerHTML +=
-    `<tr><td>${i.label}</td><td>${i.status}</td></tr>`;
+  indicatorTable.innerHTML+=
+    `<tr><td>${i.label}</td><td style="font-weight:600;color:${color(i.status)}">${i.status}</td></tr>`;
 });
 
-const edge = sessionStorage.getItem("edgePosture");
-edgeSection.innerHTML =
-  edge==="EDGE_DETECTED"
-  ? `<p>An edge protection platform was observed. Presence does not confirm
-     optimisation or configuration maturity.</p>`
-  : edge==="EDGE_PARTIAL"
-  ? `<p>Mixed edge and origin behaviour was observed, indicating inconsistent
-     application of protection layers.</p>`
-  : `<p>No external edge protection was observed; origin services appear directly
-     accessible.</p>`;
+edge.textContent=
+  sessionStorage.getItem("edgePosture")==="EDGE_DETECTED"
+  ?"An edge protection platform was observed."
+  :"No external edge protection was observed; origin services appear directly accessible.";
 
-const geo = sessionStorage.getItem("geoOrientation");
-geoSection.innerHTML =
-  geo==="GLOBAL_ORIENTED"
-  ? `<p>The site appears intentionally global, where security posture depends on
-     adaptive controls rather than geographic restriction.</p>`
-  : geo==="LOCAL_ONLY"
-  ? `<p>The site appears locally focused, where unrestricted global exposure may
-     exceed operational requirements.</p>`
-  : `<p>The site shows mixed local and global characteristics.</p>`;
+geo.textContent=
+  sessionStorage.getItem("geoOrientation")==="LOCAL_ONLY"
+  ?"The site appears locally focused."
+  :"The site shows mixed local and global characteristics.";
 
-const tls = sessionStorage.getItem("tlsPosture");
-tlsSection.innerHTML =
-  tls==="MODERN_TLS"
-  ? `<p>Modern transport encryption and healthy certificate posture were observed.</p>`
-  : tls==="COMPATIBILITY_TLS"
-  ? `<p>Compatibility-focused transport encryption was observed.</p>`
-  : `<p>Transport security indicators suggest aging protocol or certificate posture.</p>`;
+tls.textContent=
+  sessionStorage.getItem("tlsPosture")==="MODERN_TLS"
+  ?"Modern transport encryption was observed."
+  :"Transport security indicators suggest aging protocol or certificate posture.";
 </script>
 
 </body>
