@@ -56,13 +56,12 @@ pre{
   margin-top:18px
 }
 
-/* Animated dots */
+/* animated dots */
 .dots::after{
   content:"";
   animation:dots 1.4s infinite;
   margin-left:6px;
   color:#60a5fa;
-  text-shadow:0 0 6px rgba(96,165,250,.8);
 }
 @keyframes dots{
   0%{content:""}
@@ -72,7 +71,7 @@ pre{
   100%{content:""}
 }
 
-/* MODAL */
+/* PDF modal */
 #pdfModal{
   display:none;
   position:fixed;
@@ -117,6 +116,7 @@ pre{
 <label>Website domain</label><br><br>
 <input id="domain" placeholder="example.com">
 <button onclick="runScan()">Run AI surface scan</button>
+<button id="resetBtn" class="secondary hidden" onclick="resetScan()">⟳ Refresh for next scan</button>
 
 <h2>Results</h2>
 <div class="grid">
@@ -146,11 +146,16 @@ pre{
 </div>
 
 <script>
-let pdfBlobUrl=null;
+let pdfBlobUrl = null;
 
-/* Placeholder logo */
-const LOGO_BASE64 =
-"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/l4W2WAAAAABJRU5ErkJggg==";
+/*
+  LOGO SOURCE
+  Replace this later with:
+  - base64
+  - or hosted PNG (Hostinger / Horizon)
+*/
+const LOGO_SRC =
+"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/l4W2WAAAAABJRU5ErkJggg==";
 
 function runScan(){
   document.getElementById("plainResults").textContent =
@@ -179,26 +184,43 @@ MISSING – Referrer-Policy
 MISSING – Permissions-Policy`;
 
   document.getElementById("genPdfBtn").classList.remove("hidden");
+  document.getElementById("resetBtn").classList.remove("hidden");
 }
 
-/* PDF helpers */
+function resetScan(){
+  document.getElementById("plainResults").innerHTML =
+    "Awaiting input<span class='dots'></span>";
+  document.getElementById("techResults").innerHTML =
+    "Awaiting input<span class='dots'></span>";
+
+  document.getElementById("genPdfBtn").classList.add("hidden");
+  document.getElementById("dlPdfBtn").classList.add("hidden");
+  document.getElementById("resetBtn").classList.add("hidden");
+
+  if(pdfBlobUrl){
+    URL.revokeObjectURL(pdfBlobUrl);
+    pdfBlobUrl = null;
+  }
+}
+
 function drawBlock(doc,text,x,y,lineHeight,maxWidth){
-  const lines=doc.splitTextToSize(text,maxWidth);
+  const lines = doc.splitTextToSize(text,maxWidth);
   lines.forEach((l,i)=>doc.text(l,x,y+(i*lineHeight)));
-  return y+(lines.length*lineHeight);
 }
 
 function generatePDF(){
-  const doc=new window.jspdf.jsPDF();
+  const doc = new window.jspdf.jsPDF();
 
-  doc.addImage(LOGO_BASE64,"PNG",14,12,18,18);
+  /* logo */
+  doc.addImage(LOGO_SRC,"PNG",14,12,18,18);
+
   doc.setFontSize(14);
   doc.text("Urban Sentinel",38,20);
   doc.setFontSize(11);
   doc.text("AI-Assisted Website Security Surface Scan",38,27);
 
   doc.setFontSize(9);
-  doc.text(`Domain: ${document.getElementById("domain").value||"example.com"}`,14,40);
+  doc.text(`Domain: ${document.getElementById("domain").value || "example.com"}`,14,40);
   doc.text(`Generated: ${new Date().toLocaleString()}`,14,45);
   doc.line(14,48,196,48);
 
@@ -213,27 +235,11 @@ function generatePDF(){
   doc.setFontSize(9);
   drawBlock(doc,document.getElementById("techResults").textContent,14,26,6.5,180);
 
-  doc.addPage();
-  doc.setFontSize(11);
-  doc.text("Methodology & Limitations",14,20);
-  doc.setFontSize(9);
-  drawBlock(doc,
-`This report is based solely on publicly observable surface signals.
+  const blob = doc.output("blob");
+  if(pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
+  pdfBlobUrl = URL.createObjectURL(blob);
 
-The assessment:
-• Does not confirm vulnerabilities
-• Does not detect hidden scripts or trackers
-• Does not imply legal compliance
-• Does not constitute certification or endorsement
-
-This report is advisory only and intended for planning purposes.`,
-14,26,6.5,180);
-
-  const blob=doc.output("blob");
-  if(pdfBlobUrl)URL.revokeObjectURL(pdfBlobUrl);
-  pdfBlobUrl=URL.createObjectURL(blob);
-
-  document.getElementById("pdfPreview").src=pdfBlobUrl;
+  document.getElementById("pdfPreview").src = pdfBlobUrl;
   document.getElementById("pdfModal").classList.add("active");
   document.getElementById("dlPdfBtn").classList.remove("hidden");
 }
@@ -244,6 +250,7 @@ function downloadPDF(){
   a.download="urban-sentinel-surface-scan.pdf";
   a.click();
 }
+
 function closePdf(){
   document.getElementById("pdfModal").classList.remove("active");
 }
