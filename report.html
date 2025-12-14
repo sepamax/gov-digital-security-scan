@@ -6,59 +6,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-body{
-  font-family:system-ui;
-  padding:40px;
-  max-width:900px;
-  margin:auto;
-  color:#111;
-}
-header{
-  display:flex;
-  align-items:center;
-  gap:20px;
-  border-bottom:2px solid #e5e7eb;
-  padding-bottom:16px;
-}
-header img{
-  height:48px;
-}
+body{font-family:system-ui;padding:40px;max-width:900px;margin:auto;color:#111}
+header{display:flex;gap:20px;align-items:center;border-bottom:2px solid #e5e7eb;padding-bottom:16px}
+header img{height:48px}
 h1{margin:0;font-size:26px}
 h2{margin-top:36px}
-.meta{margin-top:12px;color:#444}
-table{
-  width:100%;
-  border-collapse:collapse;
-  margin-top:16px
-}
-td,th{
-  border-bottom:1px solid #ddd;
-  padding:8px;
-  text-align:left
-}
+.meta{color:#444;margin-top:8px}
+table{width:100%;border-collapse:collapse;margin-top:16px}
+td,th{border-bottom:1px solid #ddd;padding:8px;text-align:left}
 .status-STRONG{color:#065f46;font-weight:600}
 .status-WEAK{color:#92400e;font-weight:600}
 .status-MISSING{color:#991b1b;font-weight:600}
-.footer{
-  margin-top:40px;
-  font-size:12px;
-  color:#555
-}
-button{
-  margin-top:30px;
-  padding:10px 16px;
-  font-size:14px;
-}
-@media print{
-  button{display:none}
-}
+.footer{margin-top:40px;font-size:12px;color:#555}
+button{margin-top:30px;padding:10px 16px;font-size:14px}
+@media print{button{display:none}}
 </style>
 </head>
 
 <body>
 
 <header>
-  <!-- Replace src with your actual logo path -->
   <img src="urban-sentinel-logo.png" alt="Urban Sentinel logo">
   <div>
     <h1>AI-Assisted Website Security Surface Scan</h1>
@@ -71,25 +38,79 @@ button{
 
 <h2>Surface Security Indicators</h2>
 <table id="indicatorTable">
-  <tr>
-    <th>Indicator</th>
-    <th>Status</th>
-  </tr>
+  <tr><th>Indicator</th><th>Status</th></tr>
 </table>
 
 <h2>Plain English Summary</h2>
 <pre id="summary"></pre>
 
+<h2>Observed Risk Implications</h2>
+<p>
+Where modern security headers or browser enforcement controls are missing
+or weak, common implications may include reduced protection against
+client-side content injection, increased reliance on browser defaults,
+and greater exposure to risks introduced by third-party scripts or
+services.
+</p>
+<p>
+These conditions do not indicate an active security incident.
+However, over time, they may increase the likelihood or impact of future
+issues if left unaddressed.
+</p>
+
 <h2>Assessment Integrity & Disclosure</h2>
 <p>
 This report was generated using automated analysis of publicly observable
-website behaviour at the time of assessment. No intrusive testing was
-performed. Findings reflect configuration indicators only and are
-time-specific.
+website behaviour at the time of assessment.
+</p>
+<p>
+The assessment evaluates surface-level configuration indicators only and
+does not perform vulnerability scanning, penetration testing, exploit
+development, authentication bypass attempts, or active probing.
+</p>
+<p>
+Missing or weak indicators do not, on their own, confirm exploitability,
+unauthorised access, data misuse, or breach.
+</p>
+<p>
+Findings are time-specific and may change as website configuration,
+hosting infrastructure, or third-party services are updated.
+</p>
+<p>
+This report is provided for risk awareness and decision-support purposes
+only and does not guarantee security or regulatory compliance.
 </p>
 
+<h2>Independence & Engagement Disclaimer</h2>
+<p>
+Urban Sentinel does not require, expect, or condition any remediation
+work, consultancy engagement, or service purchase as a result of this
+assessment.
+</p>
+<p>
+Clients remain free to address identified issues internally, through
+existing providers, or via alternative third parties, including where
+government funding or grant support is obtained.
+</p>
+
+<h2>Government Grant & Advisory Pathways</h2>
+<p>
+This report may be used as supporting evidence to demonstrate observable
+digital risk or uplift need in applications for cyber resilience or
+digital modernisation programs.
+</p>
+
+<ul>
+  <li><strong>Cyber Wardens Program (Australian Government)</strong><br>
+    https://www.cyberwardens.gov.au</li>
+  <li><strong>ASD / ACSC Small Business Cyber Guidance</strong><br>
+    https://www.cyber.gov.au</li>
+  <li><strong>State-based Small Business Digital Grants</strong><br>
+    Availability varies by jurisdiction and funding round</li>
+</ul>
+
 <div class="footer">
-  © Urban Sentinel · urbansentinel.com.au · admin@urbansentinel.com.au
+© Urban Sentinel · urbansentinel.com.au · admin@urbansentinel.com.au
 </div>
 
 <button onclick="window.print()">Print / Save as PDF</button>
@@ -102,7 +123,7 @@ document.getElementById("time").textContent =
   new Date().toLocaleString();
 
 document.getElementById("summary").textContent =
-  sessionStorage.getItem("scanSummary") || "No summary data.";
+  sessionStorage.getItem("scanSummary") || "—";
 
 const indicators =
   JSON.parse(sessionStorage.getItem("scanIndicators") || "[]");
