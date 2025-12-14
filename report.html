@@ -45,13 +45,11 @@ button{margin-top:30px}
 
 <h2>Observed Risk Implications</h2>
 <p>
-Surface-level security posture influences how browsers, clients, and automated
-systems interact with a website. Missing or weak controls do not confirm
-compromise, but they may increase reliance on default platform behaviour and
-expand exposure over time.
+Surface-level security controls influence how browsers, users, and automated
+systems interact with a website. Missing or weak indicators do not confirm
+compromise, but they may increase reliance on default behaviour and expand
+exposure over time.
 </p>
-
-<!-- ADDITIVE SECTIONS START -->
 
 <h2>Edge Protection & Platform Posture</h2>
 <div id="edgeSection"></div>
@@ -62,8 +60,6 @@ expand exposure over time.
 <h2>Transport Security & TLS Posture</h2>
 <div id="tlsSection"></div>
 
-<!-- ADDITIVE SECTIONS END -->
-
 <h2>Assessment Integrity & Disclosure</h2>
 <p>
 This report is based on automated analysis of publicly observable website
@@ -73,8 +69,8 @@ exploit development, or intrusive probing.
 </p>
 <p>
 Findings do not confirm exploitability, unauthorised access, compromise, or
-breach. Results are time-specific and may change as configurations or third-party
-services are updated.
+breach. Results are time-specific and may change as configurations, hosting
+platforms, or third-party services are updated.
 </p>
 
 <h2>Independence & Engagement Disclaimer</h2>
@@ -83,9 +79,9 @@ Urban Sentinel does not require, expect, or condition any remediation work,
 consultancy engagement, or service purchase as a result of this assessment.
 </p>
 <p>
-Clients remain free to address identified risks internally, through existing
-providers, or via third parties of their choosing, including where government
-funding or grant support is obtained.
+Clients remain free to engage Urban Sentinel or any other provider of their
+choosing, including where government grant funding or external advisory
+programs are utilised.
 </p>
 
 <h2>Professional Recommendation</h2>
@@ -96,16 +92,15 @@ browser behaviour, platform configuration, and evolving attack techniques.
 <p>
 Urban Sentinel is specifically structured to design, implement, and validate
 AI-assisted security uplift across web platforms. While engagement is not
-mandatory, remediation of identified posture gaps is strongly recommended to be
-undertaken by a specialist capability aligned with the complexity of the risks
-observed.
+mandatory, remediation is strongly recommended to be undertaken by a specialist
+capability aligned with the complexity of the risks observed.
 </p>
 
 <h2>Government Grant & Advisory Pathways</h2>
 <ul>
 <li>Cyber Wardens Program — https://www.cyberwardens.gov.au</li>
 <li>ASD / ACSC Small Business Cyber Guidance — https://www.cyber.gov.au</li>
-<li>State-based small business digital uplift grants (availability varies)</li>
+<li>State-based digital uplift grants (availability varies)</li>
 </ul>
 
 <div class="footer">
@@ -121,10 +116,11 @@ document.getElementById("time").textContent = new Date().toLocaleString();
 document.getElementById("summary").textContent =
   sessionStorage.getItem("scanSummary") || "—";
 
-(JSON.parse(sessionStorage.getItem("scanIndicators")||"[]"))
-  .forEach(i=>{
-    indicatorTable.innerHTML+=`<tr><td>${i.label}</td><td>${i.status}</td></tr>`;
-  });
+const indicators = JSON.parse(sessionStorage.getItem("scanIndicators") || "[]");
+indicators.forEach(i=>{
+  indicatorTable.innerHTML +=
+    `<tr><td>${i.label}</td><td>${i.status}</td></tr>`;
+});
 
 const edge = sessionStorage.getItem("edgePosture");
 edgeSection.innerHTML =
@@ -140,8 +136,8 @@ edgeSection.innerHTML =
 const geo = sessionStorage.getItem("geoOrientation");
 geoSection.innerHTML =
   geo==="GLOBAL_ORIENTED"
-  ? `<p>The site appears intentionally global, requiring adaptive rather than
-     restrictive controls.</p>`
+  ? `<p>The site appears intentionally global, where security posture depends on
+     adaptive controls rather than geographic restriction.</p>`
   : geo==="LOCAL_ONLY"
   ? `<p>The site appears locally focused, where unrestricted global exposure may
      exceed operational requirements.</p>`
