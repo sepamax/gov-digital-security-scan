@@ -42,7 +42,6 @@ button{
   opacity:.6
 }
 button.enabled{opacity:1}
-button.refresh{background:#1f2937}
 button.secondary{background:#1f2937;margin-top:10px}
 button.hidden{display:none}
 
@@ -63,7 +62,7 @@ pre{
   margin-top:18px
 }
 
-/* MATRIX */
+/* STATUS MATRIX */
 .matrix{
   margin-top:18px;
   background:#0b0e14;
@@ -92,6 +91,22 @@ pre{
 .strong{background:#064e3b;color:#6ee7b7}
 .weak{background:#3f2f1d;color:#fcd34d}
 .missing{background:#3f1d1d;color:#fca5a5}
+
+/* Awaiting input animation */
+.dots::after{
+  content:"";
+  display:inline-block;
+  width:1em;
+  animation:ellipsis 1.4s infinite;
+  opacity:.7
+}
+@keyframes ellipsis{
+  0%{content:""}
+  25%{content:"."}
+  50%{content:".."}
+  75%{content:"..."}
+  100%{content:""}
+}
 
 /* PDF modal */
 #pdfModal{
@@ -141,17 +156,18 @@ pre{
 <div class="grid">
   <div>
     <h3>Summary for Decision-Makers</h3>
-    <pre id="plainResults">Awaiting input</pre>
+    <pre id="plainResults">Awaiting input<span class="dots"></span></pre>
   </div>
   <div>
     <h3>Technical Findings</h3>
-    <pre id="techResults">Awaiting input</pre>
+    <pre id="techResults">Awaiting input<span class="dots"></span></pre>
   </div>
 </div>
 
 <button id="genPdfBtn" class="secondary hidden" onclick="generatePDF()">Generate advisory report</button>
 </div>
 
+<!-- PDF MODAL -->
 <div id="pdfModal">
   <div id="pdfFrame">
     <div id="pdfHeader">
@@ -166,14 +182,12 @@ pre{
 const { jsPDF } = window.jspdf;
 let pdfBlobUrl=null;
 
-/* REAL LOGO BASE64 GOES HERE */
+/* REPLACE WITH REAL LOGO BASE64 */
 const LOGO_SRC="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/l4W2WAAAAABJRU5ErkJggg==";
 
 const COMPANY={
   name:"Urban Sentinel Pty Ltd",
-  abn:"18 688 705 268",
-  site:"https://urbansentinel.com.au",
-  email:"admin@urbansentinel.com.au"
+  abn:"18 688 705 268"
 };
 
 const indicators=[
@@ -189,27 +203,25 @@ const indicators=[
 function checkDomain(){
   const v=document.getElementById("domain").value.trim();
   const btn=document.getElementById("scanBtn");
-  if(v){
-    btn.classList.add("enabled");
-    btn.disabled=false;
-  }else{
-    btn.classList.remove("enabled");
-    btn.disabled=true;
-  }
+  btn.disabled=!v;
+  btn.classList.toggle("enabled",!!v);
 }
 checkDomain();
 
 function runScan(){
   renderMatrix();
   document.getElementById("statusMatrix").classList.remove("hidden");
-  document.getElementById("plainResults").textContent=
+
+  document.getElementById("plainResults").innerHTML=
 `• Secure transport is present.
 • Several controls are missing or partially implemented.
 • No indicators of compromise observed.
 
 Overall surface posture: MODERATE`;
-  document.getElementById("techResults").textContent=
-    indicators.map(i=>`${i.status} – ${i.label}`).join("\n");
+
+  document.getElementById("techResults").innerHTML=
+    indicators.map(i=>`${i.status} – ${i.label}`).join("<br>");
+
   document.getElementById("genPdfBtn").classList.remove("hidden");
 }
 
@@ -229,8 +241,10 @@ function header(doc,page){
   if(page>1){
     doc.addImage(LOGO_SRC,"PNG",14,10,10,10);
     doc.setFontSize(8);
-    doc.text(`${COMPANY.name} | ABN ${COMPANY.abn}`,28,15);
-    doc.text(COMPANY.site,28,20);
+    doc.text(
+      `${COMPANY.name} | ABN ${COMPANY.abn}`,
+      196,16,{align:"right"}
+    );
   }
 }
 
@@ -244,15 +258,15 @@ function generatePDF(){
   const domain=document.getElementById("domain").value.trim();
   const ts=new Date().toLocaleString();
 
-  /* COVER */
+  /* COVER PAGE */
   doc.addImage(LOGO_SRC,"PNG",70,80,70,70);
   doc.setFontSize(16);
   doc.text("AI-Assisted Website Security Surface Scan",105,170,{align:"center"});
   doc.setFontSize(10);
-  doc.text(domain,105,180,{align:"center"});
+  doc.text(`Scan report for ${domain}`,105,180,{align:"center"});
   doc.text(ts,105,186,{align:"center"});
 
-  /* INDICATORS */
+  /* INDICATORS PAGE */
   doc.addPage();
   header(doc,2);
   doc.setFontSize(12);
@@ -262,7 +276,7 @@ function generatePDF(){
     doc.text(`${i.status} – ${i.label}`,14,50+(idx*8));
   });
 
-  /* DISCLOSURE */
+  /* DISCLOSURE PAGE */
   doc.addPage();
   header(doc,3);
   doc.setFontSize(12);
@@ -278,8 +292,7 @@ The assessment is time-specific and reflects configuration indicators only.
 No intrusive testing was performed. This report does not confirm compromise, vulnerability, or legal compliance.`,
 14,50,{maxWidth:180});
 
-  /* QR */
-  QRCode.toDataURL(COMPANY.site,(e,url)=>{
+  QRCode.toDataURL("https://urbansentinel.com.au",(e,url)=>{
     doc.addImage(url,"PNG",160,240,30,30);
     const total=doc.getNumberOfPages();
     for(let i=1;i<=total;i++){
