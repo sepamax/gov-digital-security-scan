@@ -4,7 +4,9 @@
 <meta charset="UTF-8">
 <title>AI-Assisted Website Security Surface Scan | Urban Sentinel</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
 <style>
 body{
@@ -36,8 +38,10 @@ button{
   border:none;
   cursor:pointer;
   background:#3b82f6;
-  color:white
+  color:white;
+  opacity:.6
 }
+button.enabled{opacity:1}
 button.refresh{background:#1f2937}
 button.secondary{background:#1f2937;margin-top:10px}
 button.hidden{display:none}
@@ -59,7 +63,7 @@ pre{
   margin-top:18px
 }
 
-/* STATUS MATRIX */
+/* MATRIX */
 .matrix{
   margin-top:18px;
   background:#0b0e14;
@@ -70,60 +74,24 @@ pre{
 .matrix.hidden{display:none}
 .matrix-header{
   font-weight:600;
-  margin-bottom:12px;
-  color:#e5e7eb
+  margin-bottom:12px
 }
 .matrix-row{
   display:flex;
   justify-content:space-between;
-  align-items:center;
-  padding:10px 6px;
-  border-bottom:1px solid #1f2937;
-  opacity:0;
-  animation:fadeIn .4s forwards
+  padding:8px 0;
+  border-bottom:1px solid #1f2937
 }
 .matrix-row:last-child{border-bottom:none}
-
 .pill{
   font-size:12px;
-  padding:4px 10px;
+  padding:3px 10px;
   border-radius:999px;
   font-weight:600
 }
-.strong .pill{background:#064e3b;color:#6ee7b7}
-.weak .pill{background:#3f2f1d;color:#fcd34d}
-.missing .pill{background:#3f1d1d;color:#fca5a5}
-
-@keyframes fadeIn{to{opacity:1}}
-
-/* dots */
-.dots::after{
-  content:"";
-  animation:dots 1.4s infinite;
-  margin-left:6px;
-  color:#60a5fa
-}
-@keyframes dots{
-  0%{content:""}
-  25%{content:"."}
-  50%{content:".."}
-  75%{content:"..."}
-  100%{content:""}
-}
-
-/* CTA glow */
-.cta-hint{
-  margin-left:14px;
-  font-size:13px;
-  color:#93c5fd;
-  opacity:.9;
-  animation:pulse 3s ease-in-out infinite;
-}
-@keyframes pulse{
-  0%{opacity:.6}
-  50%{opacity:1}
-  100%{opacity:.6}
-}
+.strong{background:#064e3b;color:#6ee7b7}
+.weak{background:#3f2f1d;color:#fcd34d}
+.missing{background:#3f1d1d;color:#fca5a5}
 
 /* PDF modal */
 #pdfModal{
@@ -131,13 +99,11 @@ pre{
   position:fixed;
   inset:0;
   background:rgba(0,0,0,.85);
-  z-index:99999
-}
-#pdfModal.active{
-  display:flex;
+  z-index:99999;
   align-items:center;
   justify-content:center
 }
+#pdfModal.active{display:flex}
 #pdfFrame{
   width:90%;
   height:90%;
@@ -150,7 +116,6 @@ pre{
   padding:10px 14px;
   display:flex;
   justify-content:space-between;
-  align-items:center;
   background:#141821;
   border-bottom:1px solid #2a3140
 }
@@ -164,10 +129,9 @@ pre{
 
 <div class="box">
 <label>Website domain</label><br><br>
-<input id="domain" placeholder="example.com">
+<input id="domain" placeholder="e.g. yoursite.com" oninput="checkDomain()">
 <button id="scanBtn" onclick="runScan()">Run AI surface scan</button>
 
-<!-- STATUS MATRIX -->
 <div id="statusMatrix" class="matrix hidden">
   <div class="matrix-header">Surface Security Indicators</div>
   <div id="matrixRows"></div>
@@ -177,25 +141,21 @@ pre{
 <div class="grid">
   <div>
     <h3>Summary for Decision-Makers</h3>
-    <pre id="plainResults">Awaiting input<span class="dots"></span></pre>
+    <pre id="plainResults">Awaiting input</pre>
   </div>
   <div>
     <h3>Technical Findings</h3>
-    <pre id="techResults">Awaiting input<span class="dots"></span></pre>
+    <pre id="techResults">Awaiting input</pre>
   </div>
 </div>
 
 <button id="genPdfBtn" class="secondary hidden" onclick="generatePDF()">Generate advisory report</button>
-<span id="ctaHint" class="cta-hint hidden">✦ Find out more by generating the advisory report</span>
-
-<button id="dlPdfBtn" class="secondary hidden" onclick="downloadPDF()">Download PDF</button>
 </div>
 
-<!-- PDF MODAL -->
 <div id="pdfModal">
   <div id="pdfFrame">
     <div id="pdfHeader">
-      <strong>Advisory Report Preview</strong>
+      <strong>Advisory Report</strong>
       <button onclick="closePdf()">Close</button>
     </div>
     <iframe id="pdfPreview"></iframe>
@@ -203,76 +163,54 @@ pre{
 </div>
 
 <script>
+const { jsPDF } = window.jspdf;
 let pdfBlobUrl=null;
 
-/* Replace with your real base64 logo */
-const LOGO_SRC =
-"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/l4W2WAAAAABJRU5ErkJggg==";
+/* REAL LOGO BASE64 GOES HERE */
+const LOGO_SRC="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/l4W2WAAAAABJRU5ErkJggg==";
 
-/* CANONICAL INDICATORS */
-const indicators = [
-  {
-    label:"HTTPS Transport",
-    status:"STRONG",
-    context:"Secure transport is in place, reducing the likelihood of data interception during normal use. This provides a solid baseline for other security controls."
-  },
-  {
-    label:"HSTS",
-    status:"MISSING",
-    context:"Without enforced HTTPS usage, browsers may still attempt insecure connections under certain conditions. Over time, this can weaken transport protections."
-  },
-  {
-    label:"Content Security Policy",
-    status:"MISSING",
-    context:"In the absence of explicit content restrictions, browsers rely on default behaviour when loading resources. As applications evolve, this can increase unintended execution paths."
-  },
-  {
-    label:"Clickjacking Protection",
-    status:"WEAK",
-    context:"Partial framing controls are present but may not cover all embedding scenarios. This can allow interface elements to be displayed in unintended contexts."
-  },
-  {
-    label:"MIME Sniffing Protection",
-    status:"MISSING",
-    context:"Without explicit content-type enforcement, browsers may attempt to infer file types, introducing ambiguity in how content is interpreted."
-  },
-  {
-    label:"Referrer Policy",
-    status:"MISSING",
-    context:"Referrer information may be shared more broadly than necessary during navigation, potentially exposing contextual request data."
-  },
-  {
-    label:"Permissions Policy",
-    status:"MISSING",
-    context:"Browser features are not explicitly scoped. As new APIs become available, this can result in broader access than originally intended."
-  }
+const COMPANY={
+  name:"Urban Sentinel Pty Ltd",
+  abn:"18 688 705 268",
+  site:"https://urbansentinel.com.au",
+  email:"admin@urbansentinel.com.au"
+};
+
+const indicators=[
+  {label:"HTTPS Transport",status:"STRONG"},
+  {label:"HSTS",status:"MISSING"},
+  {label:"Content Security Policy",status:"MISSING"},
+  {label:"Clickjacking Protection",status:"WEAK"},
+  {label:"MIME Sniffing Protection",status:"MISSING"},
+  {label:"Referrer Policy",status:"MISSING"},
+  {label:"Permissions Policy",status:"MISSING"}
 ];
+
+function checkDomain(){
+  const v=document.getElementById("domain").value.trim();
+  const btn=document.getElementById("scanBtn");
+  if(v){
+    btn.classList.add("enabled");
+    btn.disabled=false;
+  }else{
+    btn.classList.remove("enabled");
+    btn.disabled=true;
+  }
+}
+checkDomain();
 
 function runScan(){
   renderMatrix();
   document.getElementById("statusMatrix").classList.remove("hidden");
-
-  document.getElementById("plainResults").textContent =
+  document.getElementById("plainResults").textContent=
 `• Secure transport is present.
-• Several security controls are missing or partially implemented.
-• No indicators of active compromise are visible at surface level.
+• Several controls are missing or partially implemented.
+• No indicators of compromise observed.
 
-Overall surface posture: MODERATE
-
-Interpretation:
-• Findings reflect configuration signals only.
-• They do not confirm compromise, tracking, or misuse.`;
-
-  document.getElementById("techResults").textContent =
+Overall surface posture: MODERATE`;
+  document.getElementById("techResults").textContent=
     indicators.map(i=>`${i.status} – ${i.label}`).join("\n");
-
   document.getElementById("genPdfBtn").classList.remove("hidden");
-  document.getElementById("ctaHint").classList.remove("hidden");
-
-  const btn=document.getElementById("scanBtn");
-  btn.textContent="⟳ Refresh for next scan";
-  btn.classList.add("refresh");
-  btn.onclick=resetScan;
 }
 
 function renderMatrix(){
@@ -280,102 +218,81 @@ function renderMatrix(){
   c.innerHTML="";
   indicators.forEach(i=>{
     const row=document.createElement("div");
-    row.className=`matrix-row ${i.status.toLowerCase()}`;
-    row.innerHTML=`<span>${i.label}</span><span class="pill">${i.status}</span>`;
+    row.className="matrix-row";
+    row.innerHTML=`<span>${i.label}</span>
+      <span class="pill ${i.status.toLowerCase()}">${i.status}</span>`;
     c.appendChild(row);
   });
 }
 
-function resetScan(){
-  document.getElementById("statusMatrix").classList.add("hidden");
-  document.getElementById("plainResults").innerHTML="Awaiting input<span class='dots'></span>";
-  document.getElementById("techResults").innerHTML="Awaiting input<span class='dots'></span>";
-  document.getElementById("genPdfBtn").classList.add("hidden");
-  document.getElementById("dlPdfBtn").classList.add("hidden");
-  document.getElementById("ctaHint").classList.add("hidden");
-  if(pdfBlobUrl){URL.revokeObjectURL(pdfBlobUrl);pdfBlobUrl=null}
-  const btn=document.getElementById("scanBtn");
-  btn.textContent="Run AI surface scan";
-  btn.classList.remove("refresh");
-  btn.onclick=runScan;
+function header(doc,page){
+  if(page>1){
+    doc.addImage(LOGO_SRC,"PNG",14,10,10,10);
+    doc.setFontSize(8);
+    doc.text(`${COMPANY.name} | ABN ${COMPANY.abn}`,28,15);
+    doc.text(COMPANY.site,28,20);
+  }
 }
 
-function drawBlock(doc,text,x,y,lineHeight,maxWidth){
-  const lines=doc.splitTextToSize(text,maxWidth);
-  lines.forEach((l,i)=>doc.text(l,x,y+(i*lineHeight)));
+function footer(doc,page,total){
+  doc.setFontSize(8);
+  doc.text(`Page ${page} of ${total}`,105,290,{align:"center"});
 }
 
 function generatePDF(){
-  const doc=new window.jspdf.jsPDF();
+  const doc=new jsPDF();
+  const domain=document.getElementById("domain").value.trim();
+  const ts=new Date().toLocaleString();
 
-  /* HEADER */
-  doc.addImage(LOGO_SRC,"PNG",14,12,18,18);
-  doc.setFontSize(14);
-  doc.text("Urban Sentinel",38,18);
-  doc.setFontSize(9);
-  doc.text("ABN XX XXX XXX XXX",38,24);
-  doc.text("https://urbansentinel.com.au",38,29);
+  /* COVER */
+  doc.addImage(LOGO_SRC,"PNG",70,80,70,70);
+  doc.setFontSize(16);
+  doc.text("AI-Assisted Website Security Surface Scan",105,170,{align:"center"});
+  doc.setFontSize(10);
+  doc.text(domain,105,180,{align:"center"});
+  doc.text(ts,105,186,{align:"center"});
 
-  doc.setFontSize(11);
-  doc.text("AI-Assisted Website Security Surface Scan",14,42);
-
-  doc.setFontSize(9);
-  doc.text(`Domain assessed: ${document.getElementById("domain").value || "example.com"}`,14,50);
-  doc.text(`Assessment time: ${new Date().toLocaleString()}`,14,55);
-  doc.line(14,58,196,58);
-
-  /* SURFACE INDICATORS */
-  doc.setFontSize(11);
-  doc.text("Surface Security Indicators",14,70);
-  doc.setFontSize(9);
-  drawBlock(
-    doc,
-    indicators.map(i=>`${i.status} – ${i.label}`).join("\n"),
-    14,76,6.5,180
-  );
-
-  /* CONTEXT */
+  /* INDICATORS */
   doc.addPage();
-  doc.setFontSize(11);
-  doc.text("Contextual Interpretation of Findings",14,20);
-  doc.setFontSize(9);
+  header(doc,2);
+  doc.setFontSize(12);
+  doc.text("Surface Security Indicators",14,40);
+  doc.setFontSize(10);
   indicators.forEach((i,idx)=>{
-    drawBlock(doc,`${i.label} — ${i.context}`,14,26+(idx*18),6.5,180);
+    doc.text(`${i.status} – ${i.label}`,14,50+(idx*8));
   });
 
   /* DISCLOSURE */
   doc.addPage();
-  doc.setFontSize(11);
-  doc.text("Assessment Integrity & Disclosure",14,20);
-  doc.setFontSize(9);
-  drawBlock(
-    doc,
-`This report was generated using automated analysis of publicly observable website response behaviour at the time of assessment.
+  header(doc,3);
+  doc.setFontSize(12);
+  doc.text("Assessment Integrity & Disclosure",14,40);
+  doc.setFontSize(10);
+  doc.text(
+`This report was generated using automated analysis of publicly observable website behaviour at the time of assessment.
 
-Findings are based on actual data observed during the scan and have not been fabricated, inferred beyond available signals, or manually altered.
+Findings are based on actual data observed during the scan and were not fabricated or manually altered.
 
-The assessment reflects configuration indicators only and is time-specific. Website behaviour may change after the scan was performed.
+The assessment is time-specific and reflects configuration indicators only.
 
-No intrusive testing, authentication, exploitation, or bypass techniques were used.
+No intrusive testing was performed. This report does not confirm compromise, vulnerability, or legal compliance.`,
+14,50,{maxWidth:180});
 
-This report does not confirm vulnerabilities, compromise, tracking activity, or legal compliance and is provided for advisory and planning purposes only.`,
-    14,26,6.5,180
-  );
-
-  const blob=doc.output("blob");
-  if(pdfBlobUrl)URL.revokeObjectURL(pdfBlobUrl);
-  pdfBlobUrl=URL.createObjectURL(blob);
-  document.getElementById("pdfPreview").src=pdfBlobUrl;
-  document.getElementById("pdfModal").classList.add("active");
-  document.getElementById("dlPdfBtn").classList.remove("hidden");
+  /* QR */
+  QRCode.toDataURL(COMPANY.site,(e,url)=>{
+    doc.addImage(url,"PNG",160,240,30,30);
+    const total=doc.getNumberOfPages();
+    for(let i=1;i<=total;i++){
+      doc.setPage(i);
+      footer(doc,i,total);
+    }
+    const blob=doc.output("blob");
+    pdfBlobUrl=URL.createObjectURL(blob);
+    document.getElementById("pdfPreview").src=pdfBlobUrl;
+    document.getElementById("pdfModal").classList.add("active");
+  });
 }
 
-function downloadPDF(){
-  const a=document.createElement("a");
-  a.href=pdfBlobUrl;
-  a.download="urban-sentinel-surface-scan.pdf";
-  a.click();
-}
 function closePdf(){
   document.getElementById("pdfModal").classList.remove("active");
 }
