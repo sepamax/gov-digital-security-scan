@@ -29,6 +29,7 @@ pre{background:#0b0e14;padding:14px;border-radius:8px;white-space:pre-wrap;line-
 .pill{font-size:12px;padding:3px 10px;border-radius:999px;font-weight:600}
 .ok{background:#064e3b;color:#6ee7b7}
 .warn{background:#3f2f1d;color:#fcd34d}
+.bad{background:#3f1d1d;color:#fca5a5}
 
 /* glow CTA */
 .glow{margin-left:14px;color:#93c5fd;animation:pulse 2s infinite}
@@ -54,7 +55,7 @@ pre{background:#0b0e14;padding:14px;border-radius:8px;white-space:pre-wrap;line-
   <button id="scanBtn" disabled onclick="handleScan()">Run AI surface scan</button>
 </div>
 
-<!-- TOP RESULTS -->
+<!-- TOP INDICATORS -->
 <div id="indicatorBox" class="box indicators hidden">
   <h2>Surface Security Indicators</h2>
   <div id="matrixRows"></div>
@@ -94,6 +95,16 @@ pre{background:#0b0e14;padding:14px;border-radius:8px;white-space:pre-wrap;line-
 <script>
 let scanned=false;
 
+const BASE_INDICATORS = [
+  { label: "HTTPS Transport", status: "STRONG" },
+  { label: "HTTP Strict Transport Security (HSTS)", status: "MISSING" },
+  { label: "Content Security Policy (CSP)", status: "MISSING" },
+  { label: "Clickjacking Protection", status: "WEAK" },
+  { label: "MIME Sniffing Protection", status: "MISSING" },
+  { label: "Referrer Policy", status: "MISSING" },
+  { label: "Permissions Policy", status: "MISSING" }
+];
+
 function validDomain(v){
   return /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(v);
 }
@@ -117,34 +128,38 @@ async function runScan(){
   scanBtn.textContent="Refresh scan";
   scanBtn.classList.add("enabled");
 
-  /* ===== RUN ALL 3 SCANS ===== */
-  const scanResults = await runFullScan(d);
+  /* === STORE BASE INDICATORS (CRITICAL FIX) === */
+  sessionStorage.setItem("scanIndicators", JSON.stringify(BASE_INDICATORS));
 
-  /* store basics */
-  sessionStorage.setItem("scanDomain",d);
+  /* === RUN ADVANCED SCANS === */
+  const scanResults = await runAdvancedScans(d);
 
-  /* display indicators */
+  sessionStorage.setItem("scanDomain", d);
+
+  /* === DISPLAY INDICATORS === */
   matrixRows.innerHTML="";
-  addRow("Edge / CDN Protection",scanResults.edgePosture);
-  addRow("Geographic Exposure",scanResults.geoOrientation);
-  addRow("Transport Security",scanResults.tlsPosture);
+  BASE_INDICATORS.forEach(i => addRow(i.label, i.status));
+  addRow("Edge / CDN Protection", scanResults.edgePosture);
+  addRow("Geographic Exposure", scanResults.geoOrientation);
+  addRow("Transport Security", scanResults.tlsPosture);
+
   indicatorBox.classList.remove("hidden");
 
-  /* summary text */
-  plainResults.textContent=
+  plainResults.textContent =
 `This assessment reviews publicly observable security posture signals.
 
-Edge protection, geographic exposure, and transport security were analysed
-using automated surface inspection.
+Surface indicators, platform exposure, and transport security characteristics
+were analysed using automated inspection.
 
 Results reflect configuration posture only.`;
 
-  techResults.textContent=
-`Edge: ${scanResults.edgePosture}
+  techResults.textContent =
+`Base indicators: ${BASE_INDICATORS.length}
+Edge posture: ${scanResults.edgePosture}
 Geographic exposure: ${scanResults.geoOrientation}
 TLS posture: ${scanResults.tlsPosture}`;
 
-  sessionStorage.setItem("scanSummary",plainResults.textContent);
+  sessionStorage.setItem("scanSummary", plainResults.textContent);
 
   genReportBtn.classList.remove("hidden");
   glowText.classList.remove("hidden");
@@ -171,8 +186,8 @@ function addRow(label,value){
   matrixRows.appendChild(r);
 }
 
-/* ===== FULL SCAN LOGIC ===== */
-async function runFullScan(domain){
+/* === ADVANCED SCANS === */
+async function runAdvancedScans(domain){
   const res={
     edgePosture:"EDGE_NOT_OBSERVED",
     geoOrientation:"MIXED_ORIENTATION",
@@ -184,12 +199,17 @@ async function runFullScan(domain){
     const r=await fetch(`https://${domain}`,{mode:"no-cors"});
     const h={};
     r.headers?.forEach((v,k)=>h[k.toLowerCase()]=v.toLowerCase());
-    if(h["cf-ray"]||h["cf-cache-status"]||h["server"]?.includes("cloudflare")) res.edgePosture="EDGE_DETECTED";
+    if(h["cf-ray"]||h["cf-cache-status"]||h["server"]?.includes("cloudflare")){
+      res.edgePosture="EDGE_DETECTED";
+    }
   }catch{}
 
   /* GEO */
-  if(domain.endsWith(".com.au")||domain.endsWith(".au")) res.geoOrientation="LOCAL_ONLY";
-  if(domain.endsWith(".com")) res.geoOrientation="MIXED_ORIENTATION";
+  if(domain.endsWith(".com.au")||domain.endsWith(".au")){
+    res.geoOrientation="LOCAL_ONLY";
+  } else if(domain.endsWith(".com")){
+    res.geoOrientation="MIXED_ORIENTATION";
+  }
 
   /* TLS */
   try{
@@ -210,7 +230,7 @@ async function runFullScan(domain){
   return res;
 }
 
-/* ===== REPORT MODAL ===== */
+/* === REPORT MODAL === */
 function openReportModal(){
   reportFrame.src="report.html";
   reportModal.classList.add("active");
