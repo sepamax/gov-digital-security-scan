@@ -2,25 +2,80 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Security Scan Report</title>
+<title>AI-Assisted Website Security Surface Scan</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <style>
-body{font-family:system-ui;padding:40px;max-width:900px;margin:auto}
-h1,h2{margin-top:30px}
-table{width:100%;border-collapse:collapse;margin-top:16px}
-td,th{border-bottom:1px solid #ccc;padding:8px;text-align:left}
+body{
+  font-family:system-ui;
+  padding:40px;
+  max-width:900px;
+  margin:auto;
+  color:#111;
+}
+header{
+  display:flex;
+  align-items:center;
+  gap:20px;
+  border-bottom:2px solid #e5e7eb;
+  padding-bottom:16px;
+}
+header img{
+  height:48px;
+}
+h1{margin:0;font-size:26px}
+h2{margin-top:36px}
+.meta{margin-top:12px;color:#444}
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:16px
+}
+td,th{
+  border-bottom:1px solid #ddd;
+  padding:8px;
+  text-align:left
+}
+.status-STRONG{color:#065f46;font-weight:600}
+.status-WEAK{color:#92400e;font-weight:600}
+.status-MISSING{color:#991b1b;font-weight:600}
+.footer{
+  margin-top:40px;
+  font-size:12px;
+  color:#555
+}
+button{
+  margin-top:30px;
+  padding:10px 16px;
+  font-size:14px;
+}
+@media print{
+  button{display:none}
+}
 </style>
 </head>
 
 <body>
 
-<h1>AI-Assisted Website Security Surface Scan</h1>
+<header>
+  <!-- Replace src with your actual logo path -->
+  <img src="urban-sentinel-logo.png" alt="Urban Sentinel logo">
+  <div>
+    <h1>AI-Assisted Website Security Surface Scan</h1>
+    <div class="meta">Urban Sentinel · Automated Surface Assessment</div>
+  </div>
+</header>
 
-<p><strong>Domain:</strong> <span id="domain"></span></p>
-<p><strong>Generated:</strong> <span id="time"></span></p>
+<p class="meta"><strong>Domain:</strong> <span id="domain"></span></p>
+<p class="meta"><strong>Generated:</strong> <span id="time"></span></p>
 
 <h2>Surface Security Indicators</h2>
-<table id="indicatorTable"></table>
+<table id="indicatorTable">
+  <tr>
+    <th>Indicator</th>
+    <th>Status</th>
+  </tr>
+</table>
 
 <h2>Plain English Summary</h2>
 <pre id="summary"></pre>
@@ -29,8 +84,13 @@ td,th{border-bottom:1px solid #ccc;padding:8px;text-align:left}
 <p>
 This report was generated using automated analysis of publicly observable
 website behaviour at the time of assessment. No intrusive testing was
-performed. Findings reflect configuration indicators only.
+performed. Findings reflect configuration indicators only and are
+time-specific.
 </p>
+
+<div class="footer">
+  © Urban Sentinel · urbansentinel.com.au · admin@urbansentinel.com.au
+</div>
 
 <button onclick="window.print()">Print / Save as PDF</button>
 
@@ -48,10 +108,12 @@ const indicators =
   JSON.parse(sessionStorage.getItem("scanIndicators") || "[]");
 
 const table=document.getElementById("indicatorTable");
-table.innerHTML="<tr><th>Indicator</th><th>Status</th></tr>";
 indicators.forEach(i=>{
-  table.innerHTML+=
-    `<tr><td>${i.label}</td><td>${i.status}</td></tr>`;
+  const row=document.createElement("tr");
+  row.innerHTML=
+    `<td>${i.label}</td>
+     <td class="status-${i.status}">${i.status}</td>`;
+  table.appendChild(row);
 });
 </script>
 
