@@ -12,7 +12,7 @@ header img{height:48px}
 h1{margin-top:24px}
 h2{margin-top:36px}
 table{width:100%;border-collapse:collapse;margin-top:16px}
-td,th{border-bottom:1px solid #ddd;padding:8px}
+td,th{border-bottom:1px solid #ddd;padding:8px;text-align:left}
 pre{background:#f4f4f5;padding:14px;border-radius:8px;white-space:pre-wrap}
 .footer{margin-top:40px;font-size:12px;color:#555}
 button{margin-top:30px}
@@ -23,7 +23,7 @@ button{margin-top:30px}
 <body>
 
 <header>
-  <img src="urban-sentinel-logo.png">
+  <img src="urban-sentinel-logo.png" alt="Urban Sentinel logo">
   <div class="header-right">
     Urban Sentinel Pty Ltd<br>
     ABN: 00 000 000 000
@@ -43,6 +43,16 @@ button{margin-top:30px}
 <h2>Plain English Summary</h2>
 <pre id="summary"></pre>
 
+<h2>Observed Risk Implications</h2>
+<p>
+Surface-level security posture influences how browsers, clients, and automated
+systems interact with a website. Missing or weak controls do not confirm
+compromise, but they may increase reliance on default platform behaviour and
+expand exposure over time.
+</p>
+
+<!-- ADDITIVE SECTIONS START -->
+
 <h2>Edge Protection & Platform Posture</h2>
 <div id="edgeSection"></div>
 
@@ -52,28 +62,50 @@ button{margin-top:30px}
 <h2>Transport Security & TLS Posture</h2>
 <div id="tlsSection"></div>
 
+<!-- ADDITIVE SECTIONS END -->
+
 <h2>Assessment Integrity & Disclosure</h2>
 <p>
 This report is based on automated analysis of publicly observable website
 behaviour at the time of assessment. It evaluates surface-level configuration
-signals only and does not perform penetration testing, exploitation, or
-intrusive probing.
+signals only and does not perform penetration testing, vulnerability scanning,
+exploit development, or intrusive probing.
+</p>
+<p>
+Findings do not confirm exploitability, unauthorised access, compromise, or
+breach. Results are time-specific and may change as configurations or third-party
+services are updated.
+</p>
+
+<h2>Independence & Engagement Disclaimer</h2>
+<p>
+Urban Sentinel does not require, expect, or condition any remediation work,
+consultancy engagement, or service purchase as a result of this assessment.
+</p>
+<p>
+Clients remain free to address identified risks internally, through existing
+providers, or via third parties of their choosing, including where government
+funding or grant support is obtained.
 </p>
 
 <h2>Professional Recommendation</h2>
 <p>
-The security posture characteristics identified in this assessment reflect
-interactions between platform configuration, exposure alignment, and evolving
-attack techniques. Addressing these considerations typically requires
-AI-assisted analysis and automation to ensure changes remain effective and
-sustainable over time.
+The posture characteristics identified in this assessment relate to modern
+browser behaviour, platform configuration, and evolving attack techniques.
+</p>
+<p>
+Urban Sentinel is specifically structured to design, implement, and validate
+AI-assisted security uplift across web platforms. While engagement is not
+mandatory, remediation of identified posture gaps is strongly recommended to be
+undertaken by a specialist capability aligned with the complexity of the risks
+observed.
 </p>
 
 <h2>Government Grant & Advisory Pathways</h2>
 <ul>
 <li>Cyber Wardens Program — https://www.cyberwardens.gov.au</li>
-<li>ASD / ACSC Guidance — https://www.cyber.gov.au</li>
-<li>State-based digital uplift grants (availability varies)</li>
+<li>ASD / ACSC Small Business Cyber Guidance — https://www.cyber.gov.au</li>
+<li>State-based small business digital uplift grants (availability varies)</li>
 </ul>
 
 <div class="footer">
@@ -96,27 +128,32 @@ document.getElementById("summary").textContent =
 
 const edge = sessionStorage.getItem("edgePosture");
 edgeSection.innerHTML =
-  edge==="EDGE_DETECTED" ?
-  `<p>An edge protection platform was observed. Presence does not confirm optimisation; automated analysis is required to validate posture.</p>` :
-  edge==="EDGE_PARTIAL" ?
-  `<p>Mixed edge and origin behaviour was observed, indicating inconsistent application of protection layers.</p>` :
-  `<p>No external edge protection was observed; origin services appear directly accessible.</p>`;
+  edge==="EDGE_DETECTED"
+  ? `<p>An edge protection platform was observed. Presence does not confirm
+     optimisation or configuration maturity.</p>`
+  : edge==="EDGE_PARTIAL"
+  ? `<p>Mixed edge and origin behaviour was observed, indicating inconsistent
+     application of protection layers.</p>`
+  : `<p>No external edge protection was observed; origin services appear directly
+     accessible.</p>`;
 
 const geo = sessionStorage.getItem("geoOrientation");
 geoSection.innerHTML =
-  geo==="GLOBAL_ORIENTED" ?
-  `<p>The site appears intentionally global; security depends on adaptive controls rather than geographic restriction.</p>` :
-  geo==="LOCAL_ONLY" ?
-  `<p>The site appears locally focused; global exposure may exceed operational requirements.</p>` :
-  `<p>The site shows mixed local and global characteristics.</p>`;
+  geo==="GLOBAL_ORIENTED"
+  ? `<p>The site appears intentionally global, requiring adaptive rather than
+     restrictive controls.</p>`
+  : geo==="LOCAL_ONLY"
+  ? `<p>The site appears locally focused, where unrestricted global exposure may
+     exceed operational requirements.</p>`
+  : `<p>The site shows mixed local and global characteristics.</p>`;
 
 const tls = sessionStorage.getItem("tlsPosture");
 tlsSection.innerHTML =
-  tls==="MODERN_TLS" ?
-  `<p>Modern TLS protocols and certificate posture were observed.</p>` :
-  tls==="COMPATIBILITY_TLS" ?
-  `<p>Compatibility-focused transport encryption was observed.</p>` :
-  `<p>Transport security indicators suggest aging protocol or certificate posture.</p>`;
+  tls==="MODERN_TLS"
+  ? `<p>Modern transport encryption and healthy certificate posture were observed.</p>`
+  : tls==="COMPATIBILITY_TLS"
+  ? `<p>Compatibility-focused transport encryption was observed.</p>`
+  : `<p>Transport security indicators suggest aging protocol or certificate posture.</p>`;
 </script>
 
 </body>
