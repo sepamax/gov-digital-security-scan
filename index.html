@@ -18,7 +18,7 @@ button.hidden{display:none}
 pre{background:#0b0e14;padding:14px;border-radius:8px;white-space:pre-wrap;line-height:1.5;color:#cbd5f5;min-height:90px}
 .hidden{display:none}
 
-/* animated dots */
+/* dots */
 .dots::after{content:"";display:inline-block;width:1em;animation:ellipsis 1.4s infinite}
 @keyframes ellipsis{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}100%{content:""}}
 
@@ -27,11 +27,11 @@ pre{background:#0b0e14;padding:14px;border-radius:8px;white-space:pre-wrap;line-
 .matrix-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1f2937}
 .matrix-row:last-child{border-bottom:none}
 .pill{font-size:12px;padding:3px 10px;border-radius:999px;font-weight:600}
-.ok{background:#064e3b;color:#6ee7b7}
-.warn{background:#3f2f1d;color:#fcd34d}
-.bad{background:#3f1d1d;color:#fca5a5}
+.green{background:#064e3b;color:#6ee7b7}
+.yellow{background:#3f2f1d;color:#fcd34d}
+.red{background:#3f1d1d;color:#fca5a5}
 
-/* glow CTA */
+/* glow */
 .glow{margin-left:14px;color:#93c5fd;animation:pulse 2s infinite}
 @keyframes pulse{0%{opacity:.5}50%{opacity:1}100%{opacity:.5}}
 
@@ -55,7 +55,6 @@ pre{background:#0b0e14;padding:14px;border-radius:8px;white-space:pre-wrap;line-
   <button id="scanBtn" disabled onclick="handleScan()">Run AI surface scan</button>
 </div>
 
-<!-- TOP INDICATORS -->
 <div id="indicatorBox" class="box indicators hidden">
   <h2>Surface Security Indicators</h2>
   <div id="matrixRows"></div>
@@ -74,17 +73,16 @@ pre{background:#0b0e14;padding:14px;border-radius:8px;white-space:pre-wrap;line-
   </div>
 
   <div style="margin-top:18px">
-    <button id="genReportBtn" class="secondary hidden" onclick="openReportModal()">Generate advisory report</button>
+    <button id="genReportBtn" class="secondary hidden" onclick="openReport()">Generate advisory report</button>
     <span id="glowText" class="glow hidden">Generate full scan results to find out more →</span>
   </div>
 </div>
 
-<!-- REPORT MODAL -->
 <div id="reportModal" class="modal">
   <div class="modal-content">
     <div class="modal-header">
       <strong>Advisory Report Preview</strong>
-      <button onclick="closeReportModal()">Close</button>
+      <button onclick="closeReport()">Close</button>
     </div>
     <div class="modal-body">
       <iframe id="reportFrame"></iframe>
@@ -95,30 +93,24 @@ pre{background:#0b0e14;padding:14px;border-radius:8px;white-space:pre-wrap;line-
 <script>
 let scanned=false;
 
-const BASE_INDICATORS = [
-  { label: "HTTPS Transport", status: "STRONG" },
-  { label: "HTTP Strict Transport Security (HSTS)", status: "MISSING" },
-  { label: "Content Security Policy (CSP)", status: "MISSING" },
-  { label: "Clickjacking Protection", status: "WEAK" },
-  { label: "MIME Sniffing Protection", status: "MISSING" },
-  { label: "Referrer Policy", status: "MISSING" },
-  { label: "Permissions Policy", status: "MISSING" }
+const BASE_INDICATORS=[
+  {label:"HTTPS Transport",status:"STRONG"},
+  {label:"HTTP Strict Transport Security (HSTS)",status:"MISSING"},
+  {label:"Content Security Policy (CSP)",status:"MISSING"},
+  {label:"Clickjacking Protection",status:"WEAK"},
+  {label:"MIME Sniffing Protection",status:"MISSING"},
+  {label:"Referrer Policy",status:"MISSING"},
+  {label:"Permissions Policy",status:"MISSING"}
 ];
 
-function validDomain(v){
-  return /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(v);
-}
-
+function validDomain(v){return /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(v);}
 function checkDomain(){
   if(scanned) return;
-  const v=domain.value.trim();
-  scanBtn.disabled=!validDomain(v);
+  scanBtn.disabled=!validDomain(domain.value.trim());
   scanBtn.classList.toggle("enabled",!scanBtn.disabled);
 }
 
-async function handleScan(){
-  scanned ? resetScan() : await runScan();
-}
+async function handleScan(){scanned?resetScan():await runScan();}
 
 async function runScan(){
   const d=domain.value.trim();
@@ -128,24 +120,20 @@ async function runScan(){
   scanBtn.textContent="Refresh scan";
   scanBtn.classList.add("enabled");
 
-  /* === STORE BASE INDICATORS (CRITICAL FIX) === */
-  sessionStorage.setItem("scanIndicators", JSON.stringify(BASE_INDICATORS));
+  sessionStorage.setItem("scanDomain",d);
+  sessionStorage.setItem("scanIndicators",JSON.stringify(BASE_INDICATORS));
 
-  /* === RUN ADVANCED SCANS === */
-  const scanResults = await runAdvancedScans(d);
+  const adv=await runAdvancedScans(d);
 
-  sessionStorage.setItem("scanDomain", d);
-
-  /* === DISPLAY INDICATORS === */
   matrixRows.innerHTML="";
-  BASE_INDICATORS.forEach(i => addRow(i.label, i.status));
-  addRow("Edge / CDN Protection", scanResults.edgePosture);
-  addRow("Geographic Exposure", scanResults.geoOrientation);
-  addRow("Transport Security", scanResults.tlsPosture);
+  BASE_INDICATORS.forEach(i=>addRow(i.label,i.status));
+  addRow("Edge / CDN Protection",adv.edgePosture);
+  addRow("Geographic Exposure",adv.geoOrientation);
+  addRow("Transport Security",adv.tlsPosture);
 
   indicatorBox.classList.remove("hidden");
 
-  plainResults.textContent =
+  plainResults.textContent=
 `This assessment reviews publicly observable security posture signals.
 
 Surface indicators, platform exposure, and transport security characteristics
@@ -153,13 +141,12 @@ were analysed using automated inspection.
 
 Results reflect configuration posture only.`;
 
-  techResults.textContent =
-`Base indicators: ${BASE_INDICATORS.length}
-Edge posture: ${scanResults.edgePosture}
-Geographic exposure: ${scanResults.geoOrientation}
-TLS posture: ${scanResults.tlsPosture}`;
+  techResults.textContent=
+`Edge posture: ${adv.edgePosture}
+Geographic exposure: ${adv.geoOrientation}
+Transport security: ${adv.tlsPosture}`;
 
-  sessionStorage.setItem("scanSummary", plainResults.textContent);
+  sessionStorage.setItem("scanSummary",plainResults.textContent);
 
   genReportBtn.classList.remove("hidden");
   glowText.classList.remove("hidden");
@@ -179,63 +166,56 @@ function resetScan(){
   sessionStorage.clear();
 }
 
-function addRow(label,value){
+function pillClass(s){
+  s=s.toUpperCase();
+  if(s.includes("STRONG")||s.includes("MODERN")) return "green";
+  if(s.includes("WEAK")||s.includes("AGING")) return "yellow";
+  if(s.includes("MISSING")||s.includes("NOT")) return "red";
+  if(s.includes("MIXED")) return "yellow";
+  return "green";
+}
+
+function addRow(l,v){
   const r=document.createElement("div");
   r.className="matrix-row";
-  r.innerHTML=`<span>${label}</span><span class="pill ok">${value}</span>`;
+  r.innerHTML=`<span>${l}</span><span class="pill ${pillClass(v)}">${v}</span>`;
   matrixRows.appendChild(r);
 }
 
-/* === ADVANCED SCANS === */
 async function runAdvancedScans(domain){
-  const res={
-    edgePosture:"EDGE_NOT_OBSERVED",
-    geoOrientation:"MIXED_ORIENTATION",
-    tlsPosture:"AGING_TLS"
-  };
+  const r={edgePosture:"EDGE_NOT_OBSERVED",geoOrientation:"MIXED_ORIENTATION",tlsPosture:"AGING_TLS"};
 
-  /* EDGE / CDN */
   try{
-    const r=await fetch(`https://${domain}`,{mode:"no-cors"});
-    const h={};
-    r.headers?.forEach((v,k)=>h[k.toLowerCase()]=v.toLowerCase());
-    if(h["cf-ray"]||h["cf-cache-status"]||h["server"]?.includes("cloudflare")){
-      res.edgePosture="EDGE_DETECTED";
-    }
+    const f=await fetch(`https://${domain}`,{mode:"no-cors"});
+    const h={}; f.headers?.forEach((v,k)=>h[k]=v.toLowerCase());
+    if(h["cf-ray"]||h["cf-cache-status"]||h["server"]?.includes("cloudflare"))
+      r.edgePosture="EDGE_DETECTED";
   }catch{}
 
-  /* GEO */
-  if(domain.endsWith(".com.au")||domain.endsWith(".au")){
-    res.geoOrientation="LOCAL_ONLY";
-  } else if(domain.endsWith(".com")){
-    res.geoOrientation="MIXED_ORIENTATION";
-  }
+  if(domain.endsWith(".com.au")||domain.endsWith(".au")) r.geoOrientation="LOCAL_ONLY";
+  else if(domain.endsWith(".com")) r.geoOrientation="MIXED_ORIENTATION";
 
-  /* TLS */
   try{
-    const r=await fetch(`https://${domain}`,{cache:"no-store"});
-    const exp=r.headers.get("expires");
+    const f=await fetch(`https://${domain}`,{cache:"no-store"});
+    const exp=f.headers.get("expires");
     if(exp){
       const days=(new Date(exp)-new Date())/86400000;
-      res.tlsPosture=days>30?"MODERN_TLS":"AGING_TLS";
-    }else{
-      res.tlsPosture="COMPATIBILITY_TLS";
+      r.tlsPosture=days>30?"MODERN_TLS":"AGING_TLS";
     }
   }catch{}
 
-  sessionStorage.setItem("edgePosture",res.edgePosture);
-  sessionStorage.setItem("geoOrientation",res.geoOrientation);
-  sessionStorage.setItem("tlsPosture",res.tlsPosture);
+  sessionStorage.setItem("edgePosture",r.edgePosture);
+  sessionStorage.setItem("geoOrientation",r.geoOrientation);
+  sessionStorage.setItem("tlsPosture",r.tlsPosture);
 
-  return res;
+  return r;
 }
 
-/* === REPORT MODAL === */
-function openReportModal(){
+function openReport(){
   reportFrame.src="report.html";
   reportModal.classList.add("active");
 }
-function closeReportModal(){
+function closeReport(){
   reportModal.classList.remove("active");
   reportFrame.src="";
 }
