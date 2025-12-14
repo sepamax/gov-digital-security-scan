@@ -62,7 +62,7 @@ pre{
   margin-top:18px
 }
 
-/* STATUS MATRIX */
+/* MATRIX */
 .matrix{
   margin-top:18px;
   background:#0b0e14;
@@ -92,7 +92,7 @@ pre{
 .weak{background:#3f2f1d;color:#fcd34d}
 .missing{background:#3f1d1d;color:#fca5a5}
 
-/* Awaiting input animation */
+/* Awaiting animation */
 .dots::after{
   content:"";
   display:inline-block;
@@ -145,7 +145,7 @@ pre{
 <div class="box">
 <label>Website domain</label><br><br>
 <input id="domain" placeholder="e.g. yoursite.com" oninput="checkDomain()">
-<button id="scanBtn" onclick="runScan()">Run AI surface scan</button>
+<button id="scanBtn" onclick="handleScan()">Run AI surface scan</button>
 
 <div id="statusMatrix" class="matrix hidden">
   <div class="matrix-header">Surface Security Indicators</div>
@@ -181,13 +181,15 @@ pre{
 <script>
 const { jsPDF } = window.jspdf;
 let pdfBlobUrl=null;
+let scanHasRun=false;
 
-/* REPLACE WITH REAL LOGO BASE64 */
 const LOGO_SRC="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/l4W2WAAAAABJRU5ErkJggg==";
 
 const COMPANY={
   name:"Urban Sentinel Pty Ltd",
-  abn:"18 688 705 268"
+  abn:"18 688 705 268",
+  site:"urbansentinel.com.au",
+  email:"admin@urbansentinel.com.au"
 };
 
 const indicators=[
@@ -206,9 +208,18 @@ function checkDomain(){
   btn.disabled=!v;
   btn.classList.toggle("enabled",!!v);
 }
-checkDomain();
+
+function handleScan(){
+  if(!scanHasRun){
+    runScan();
+  }else{
+    resetScan();
+  }
+}
 
 function runScan(){
+  scanHasRun=true;
+  document.getElementById("scanBtn").textContent="Refresh scan";
   renderMatrix();
   document.getElementById("statusMatrix").classList.remove("hidden");
 
@@ -225,6 +236,15 @@ Overall surface posture: MODERATE`;
   document.getElementById("genPdfBtn").classList.remove("hidden");
 }
 
+function resetScan(){
+  scanHasRun=false;
+  document.getElementById("scanBtn").textContent="Run AI surface scan";
+  document.getElementById("statusMatrix").classList.add("hidden");
+  document.getElementById("genPdfBtn").classList.add("hidden");
+  document.getElementById("plainResults").innerHTML="Awaiting input<span class='dots'></span>";
+  document.getElementById("techResults").innerHTML="Awaiting input<span class='dots'></span>";
+}
+
 function renderMatrix(){
   const c=document.getElementById("matrixRows");
   c.innerHTML="";
@@ -237,73 +257,33 @@ function renderMatrix(){
   });
 }
 
-function header(doc,page){
-  if(page>1){
-    doc.addImage(LOGO_SRC,"PNG",14,10,10,10);
-    doc.setFontSize(8);
-    doc.text(
-      `${COMPANY.name} | ABN ${COMPANY.abn}`,
-      196,16,{align:"right"}
-    );
-  }
-}
-
-function footer(doc,page,total){
-  doc.setFontSize(8);
-  doc.text(`Page ${page} of ${total}`,105,290,{align:"center"});
-}
-
 function generatePDF(){
   const doc=new jsPDF();
   const domain=document.getElementById("domain").value.trim();
   const ts=new Date().toLocaleString();
 
-  /* COVER PAGE */
   doc.addImage(LOGO_SRC,"PNG",70,80,70,70);
   doc.setFontSize(16);
   doc.text("AI-Assisted Website Security Surface Scan",105,170,{align:"center"});
   doc.setFontSize(10);
   doc.text(`Scan report for ${domain}`,105,180,{align:"center"});
   doc.text(ts,105,186,{align:"center"});
+  doc.text(COMPANY.site,105,192,{align:"center"});
+  doc.text(COMPANY.email,105,198,{align:"center"});
 
-  /* INDICATORS PAGE */
   doc.addPage();
-  header(doc,2);
   doc.setFontSize(12);
   doc.text("Surface Security Indicators",14,40);
   doc.setFontSize(10);
   indicators.forEach((i,idx)=>{
-    doc.text(`${i.status} – ${i.label}`,14,50+(idx*8));
+    doc.text(i.label,14,50+(idx*10));
+    doc.text(i.status,190,50+(idx*10),{align:"right"});
   });
 
-  /* DISCLOSURE PAGE */
-  doc.addPage();
-  header(doc,3);
-  doc.setFontSize(12);
-  doc.text("Assessment Integrity & Disclosure",14,40);
-  doc.setFontSize(10);
-  doc.text(
-`This report was generated using automated analysis of publicly observable website behaviour at the time of assessment.
-
-Findings are based on actual data observed during the scan and were not fabricated or manually altered.
-
-The assessment is time-specific and reflects configuration indicators only.
-
-No intrusive testing was performed. This report does not confirm compromise, vulnerability, or legal compliance.`,
-14,50,{maxWidth:180});
-
-  QRCode.toDataURL("https://urbansentinel.com.au",(e,url)=>{
-    doc.addImage(url,"PNG",160,240,30,30);
-    const total=doc.getNumberOfPages();
-    for(let i=1;i<=total;i++){
-      doc.setPage(i);
-      footer(doc,i,total);
-    }
-    const blob=doc.output("blob");
-    pdfBlobUrl=URL.createObjectURL(blob);
-    document.getElementById("pdfPreview").src=pdfBlobUrl;
-    document.getElementById("pdfModal").classList.add("active");
-  });
+  const blob=doc.output("blob");
+  pdfBlobUrl=URL.createObjectURL(blob);
+  document.getElementById("pdfPreview").src=pdfBlobUrl;
+  document.getElementById("pdfModal").classList.add("active");
 }
 
 function closePdf(){
